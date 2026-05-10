@@ -331,20 +331,32 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale, userEmail }: 
             {levels.map((l) => (
               <div
                 key={l.level}
-                onClick={() => selectLevel(l, mode)}
+                onClick={() => {
+                  if (isGuest) {
+                    alert("Zaloguj się aby wybrać level");
+                  } else {
+                    selectLevel(l, mode);
+                  }
+                }}
                 style={{
                   background: "var(--bg-card)", border: "1px solid var(--border)",
                   borderRadius: "var(--radius-lg)", padding: "18px 22px",
-                  cursor: "pointer", transition: "all 0.15s",
+                  cursor: isGuest ? "not-allowed" : "pointer",
+                  transition: "all 0.15s",
                   display: "flex", alignItems: "center", gap: 16,
+                  opacity: isGuest ? 0.6 : 1,
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-bright)";
-                  (e.currentTarget as HTMLDivElement).style.transform = "translateX(4px)";
+                  if (!isGuest) {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-bright)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateX(4px)";
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
-                  (e.currentTarget as HTMLDivElement).style.transform = "translateX(0)";
+                  if (!isGuest) {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateX(0)";
+                  }
                 }}
               >
                 <div style={{

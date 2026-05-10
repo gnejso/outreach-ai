@@ -44,7 +44,7 @@ export default async function JaskiniaPage({
   // Translate all text fields in one batch call per locale
   let serialized = businesses.map((b) => ({
     ...b,
-    unlocked: user.role === "ADMIN" || unlockedIds.has(b.id),
+    unlocked: user?.role === "ADMIN" || unlockedIds.has(b.id),
   }));
 
   if (locale !== "pl") {
