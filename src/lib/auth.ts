@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 import Nodemailer from "next-auth/providers/nodemailer";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
+import nodemailer from "nodemailer";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -23,11 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       from: process.env.EMAIL_FROM ?? "noreply@outreachai.app",
       async sendVerificationRequest({ identifier: email, url, provider }) {
         const { host } = new URL(url);
-        const transport = provider.server;
-
-        if (!transport) {
-          throw new Error("Email transport not configured");
-        }
+        const transport = nodemailer.createTransport(provider.server as any);
 
         const result = await transport.sendMail({
           to: email,
