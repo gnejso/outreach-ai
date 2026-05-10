@@ -28,10 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const result = await transport.sendMail({
           to: email,
-          from: {
-            name: "OutreachAI",
-            address: provider.from,
-          },
+          from: `OutreachAI <${provider.from}>`,
           subject: "Twój link do logowania — OutreachAI",
           text: `Zaloguj się do OutreachAI\n\nKliknij poniższy link aby zalogować się do swojego konta:\n${url}\n\nLink wygasa za 24 godziny.\n\nJeśli nie prosiłeś o ten email, zignoruj go.\n\nPozdrawiamy,\nZespół OutreachAI`,
           html: `
