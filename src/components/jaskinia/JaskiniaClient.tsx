@@ -98,10 +98,6 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
       setSelectedBusiness({ ...b, unlocked: true });
       return;
     }
-    if (isFree) {
-      alert("Jaskinia dostępna od planu TIER 1. Możesz odblokować 5 losowych strategii za 10 kredytów każda.");
-      return;
-    }
     if (!isAdmin && credits < 10) {
       alert(t("insufficientCredits"));
       return;
