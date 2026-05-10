@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (!businessId) return NextResponse.json({ error: "Missing businessId" }, { status: 400 });
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { email: session.user.email! },
     select: { id: true, credits: true, role: true },
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });

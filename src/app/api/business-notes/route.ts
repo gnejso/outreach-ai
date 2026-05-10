@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+    const user = await prisma.user.findUnique({ where: { email: session.user.email! }, select: { id: true } });
     if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { searchParams } = new URL(request.url);
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       console.log("[business-notes] No session");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+    const user = await prisma.user.findUnique({ where: { email: session.user.email! }, select: { id: true } });
     if (!user) {
       console.log("[business-notes] User not found");
       return NextResponse.json({ error: "Not found" }, { status: 404 });

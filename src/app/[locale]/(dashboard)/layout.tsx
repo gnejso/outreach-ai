@@ -38,7 +38,7 @@ export default async function DashboardLayout({
   if (session?.user?.email) {
     try {
       const dbUser = await prisma.user.findUnique({
-        where: { email: session.user.email },
+        where: { email: session.user.email! },
         select: { id: true },
       });
       if (dbUser) {

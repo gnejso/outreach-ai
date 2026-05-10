@@ -16,7 +16,7 @@ export default async function OfertaPage({
   if (!session?.user?.email) redirect(`/${locale}/login`);
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { email: session.user.email! },
     select: { credits: true, role: true },
   });
 

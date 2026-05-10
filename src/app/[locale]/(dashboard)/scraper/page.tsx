@@ -11,10 +11,10 @@ export default async function ScraperPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user) redirect(`/${locale}/login`);
+  if (!session?.user?.email) redirect(`/${locale}/login`);
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { email: session.user.email! },
     select: { tier: true, credits: true, role: true },
   });
 

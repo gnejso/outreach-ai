@@ -13,7 +13,7 @@ export default async function DashboardPage({
   if (!session?.user?.email) redirect(`/${locale}/login`);
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { email: session.user.email! },
     select: { id: true, name: true, role: true, credits: true, freeScripts: true, createdAt: true, tier: true },
   });
   if (!user) redirect(`/${locale}/login`);
