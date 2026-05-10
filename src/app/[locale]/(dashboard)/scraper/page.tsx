@@ -15,7 +15,7 @@ export default async function ScraperPage({
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email! },
-    select: { tier: true, credits: true, role: true },
+    select: { id: true, tier: true, credits: true, role: true },
   });
 
   const tierLimit = SCRAPER_LIMITS[user?.tier as keyof typeof SCRAPER_LIMITS] ?? 0;
