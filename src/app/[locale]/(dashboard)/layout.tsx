@@ -64,6 +64,7 @@ export default async function DashboardLayout({
           image: user.image,
           role: user.role,
           credits: user.credits,
+          freeScripts: user.freeScripts,
         }}
         locale={locale}
         overdueReminders={overdueReminders}
