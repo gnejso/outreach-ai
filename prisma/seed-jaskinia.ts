@@ -1,11 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
-const dbPath = path.join(process.cwd(), "prisma", "dev.db");
-const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = new PrismaClient({ adapter } as any);
+const connectionString = process.env.DATABASE_URL || "file:./prisma/dev.db";
+
+let prisma: PrismaClient;
+
+if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://") || connectionString.startsWith("prisma+postgres://")) {
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
+  prisma = new PrismaClient({ adapter });
+  console.log("Using PostgreSQL adapter");
+} else {
+  throw new Error("PrismaClient requires an adapter in Prisma 7. Please configure DATABASE_URL to use PostgreSQL.");
+}
 
 const BUSINESSES: {
   name: string;
