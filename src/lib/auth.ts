@@ -21,7 +21,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           pass: process.env.EMAIL_SERVER_PASSWORD ?? "",
         },
       },
-      from: process.env.EMAIL_FROM ?? "noreply@outreachai.app",
+      from: process.env.EMAIL_FROM ?? "outreachai11@gmail.com",
       async sendVerificationRequest({ identifier: email, url, provider }) {
         const { host } = new URL(url);
         const transport = nodemailer.createTransport(provider.server as any);
