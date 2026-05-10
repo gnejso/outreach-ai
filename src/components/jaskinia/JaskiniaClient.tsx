@@ -31,6 +31,7 @@ interface Props {
   isAdmin: boolean;
   locale: string;
   userEmail?: string | null;
+  userTier: string;
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -45,8 +46,9 @@ const STRATEGY_NUM_LABEL: Record<string, string> = {
   "3": "3.",
 };
 
-export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail }: Props) {
+export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, userTier }: Props) {
   const isGuest = !userEmail;
+  const isFree = userTier === "FREE";
   const t = useTranslations("jaskinia");
   const tSb = useTranslations("shadowBoxing");
   const nextRouter = useNextRouter();
@@ -96,7 +98,11 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail }: 
       setSelectedBusiness({ ...b, unlocked: true });
       return;
     }
-    if (!isAdmin && credits < 5) {
+    if (isFree) {
+      alert("Jaskinia dostępna od planu TIER 1. Możesz odblokować 5 losowych strategii za 10 kredytów każda.");
+      return;
+    }
+    if (!isAdmin && credits < 10) {
       alert(t("insufficientCredits"));
       return;
     }
@@ -114,7 +120,7 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail }: 
         return;
       }
       setLocalUnlocked((prev) => new Set([...prev, b.id]));
-      if (!isAdmin) setCredits((c) => c - 5);
+      if (!isAdmin) setCredits((c) => c - 10);
       setSelectedBusiness({ ...b, unlocked: true });
     } finally {
       setUnlockingId(null);
@@ -278,7 +284,7 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail }: 
                       fontSize: 13,
                       fontWeight: 600,
                     }}>
-                      {isLocking ? t("unlocking") : t("unlockCost")}
+                      {isLocking ? t("unlocking") : (isFree ? "TIER 1+" : "Odblokuj za 10 💎")}
                     </span>
                   </div>
                 )}

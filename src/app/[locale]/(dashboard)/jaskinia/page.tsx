@@ -14,7 +14,7 @@ export default async function JaskiniaPage({
 
   const user = session?.user?.email ? await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { id: true, credits: true, role: true },
+    select: { id: true, credits: true, role: true, tier: true },
   }) : null;
 
   const [businesses, unlockedRaw] = await Promise.all([
@@ -103,6 +103,7 @@ export default async function JaskiniaPage({
       isAdmin={user?.role === "ADMIN"}
       locale={locale}
       userEmail={session?.user?.email}
+      userTier={user?.tier ?? "FREE"}
     />
   );
 }

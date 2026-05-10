@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   if (user.role !== "ADMIN") {
-    if (user.credits < 5) return NextResponse.json({ error: "Niewystarczające kredyty" }, { status: 402 });
+    if (user.credits < 10) return NextResponse.json({ error: "Niewystarczające kredyty" }, { status: 402 });
   }
 
   const existing = await prisma.unlockedStrategy.findUnique({
@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
   await prisma.$transaction(async (tx) => {
     await tx.unlockedStrategy.create({ data: { userId: user.id, businessId } });
     if (user.role !== "ADMIN") {
-      await tx.user.update({ where: { id: user.id }, data: { credits: { decrement: 5 } } });
+      await tx.user.update({ where: { id: user.id }, data: { credits: { decrement: 10 } } });
       await tx.activity.create({
         data: {
           userId: user.id,
           type: "JASKINIA_UNLOCK",
           description: "Odblokowanie strategii w Jaskini Łowcy",
-          creditsUsed: 5,
+          creditsUsed: 10,
         },
       });
     }
