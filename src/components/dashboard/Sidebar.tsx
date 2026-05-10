@@ -27,6 +27,7 @@ interface SidebarProps {
     image?: string | null;
     role?: string;
     credits?: number;
+    freeScripts?: number;
   };
   locale: string;
   overdueReminders?: number;
@@ -41,6 +42,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
 
   const isAdmin = user.role === "ADMIN";
   const credits = user.credits ?? 0;
+  const freeScripts = user.freeScripts ?? 0;
 
   const navItems = [
     { href: "/dashboard", label: t("dashboard"), icon: <DashIcon /> },
