@@ -10,13 +10,11 @@ export default async function DashboardPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true, name: true, role: true, credits: true, freeScripts: true, createdAt: true, tier: true },
-  });
-  if (!user) redirect(`/${locale}/login`);
+  }) : null;
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -32,7 +30,7 @@ export default async function DashboardPage({
     creditsToday,
     followUpsToday,
     activityByDate,
-  ] = await Promise.all([
+  ] = user ? await Promise.all([
     prisma.activity.aggregate({
       where: { userId: user.id, createdAt: { gte: startOfMonth } },
       _sum: { creditsUsed: true },
@@ -69,7 +67,16 @@ export default async function DashboardPage({
       GROUP BY DATE("createdAt")
       ORDER BY date ASC
     `,
-  ]);
+  ]) : [
+    { _sum: { creditsUsed: 0 } },
+    [],
+    0,
+    0,
+    [],
+    { _sum: { creditsUsed: 0 } },
+    0,
+    [],
+  ];
 
   const byStatus = { NEW: 0, IN_PROGRESS: 0, INTERESTED: 0, CLOSED: 0, REJECTED: 0 };
   for (const g of statusGroups) {
@@ -86,11 +93,11 @@ export default async function DashboardPage({
   return (
     <DashboardClient
       user={{
-        name: user.name,
-        role: user.role,
-        credits: user.credits,
-        tier: user.tier,
-        createdAt: user.createdAt.toISOString(),
+        name: user?.name ?? null,
+        role: user?.role ?? "USER",
+        credits: user?.credits ?? 0,
+        tier: user?.tier ?? "FREE",
+        createdAt: user?.createdAt.toISOString() ?? new Date().toISOString(),
       }}
       stats={{
         creditsUsedMonth: monthlyStats._sum.creditsUsed ?? 0,

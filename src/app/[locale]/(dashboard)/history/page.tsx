@@ -10,19 +10,17 @@ export default async function HistoryPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true },
-  });
-  if (!user) redirect(`/${locale}/login`);
+  }) : null;
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [activities, monthlyStats, scriptCount, smsCount, scriptSessions] = await Promise.all([
+  const [activities, monthlyStats, scriptCount, smsCount, scriptSessions] = user ? await Promise.all([
     prisma.activity.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -44,7 +42,7 @@ export default async function HistoryPage({
       take: 100,
       select: { id: true, purpose: true, count: true, creditsUsed: true, createdAt: true },
     }),
-  ]);
+  ]) : [[], { _sum: { creditsUsed: 0 } }, 0, 0, []];
 
   return (
     <HistoryClient

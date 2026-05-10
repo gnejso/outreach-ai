@@ -11,12 +11,11 @@ export default async function ScraperPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true, tier: true, credits: true, role: true },
-  });
+  }) : null;
 
   const tierLimit = SCRAPER_LIMITS[user?.tier as keyof typeof SCRAPER_LIMITS] ?? 0;
 
@@ -24,14 +23,14 @@ export default async function ScraperPage({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const todayScraperUse = await prisma.activity.aggregate({
+  const todayScraperUse = user ? await prisma.activity.aggregate({
     where: {
       userId: user?.id,
       type: "SCRAPER_USE",
       createdAt: { gte: today },
     },
     _sum: { creditsUsed: true },
-  });
+  }) : { _sum: { creditsUsed: 0 } };
 
   const usedToday = todayScraperUse._sum.creditsUsed ?? 0;
 

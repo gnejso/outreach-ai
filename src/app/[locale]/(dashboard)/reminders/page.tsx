@@ -10,16 +10,14 @@ export default async function RemindersPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true },
-  });
-  if (!user) redirect(`/${locale}/login`);
+  }) : null;
 
   const now = new Date();
-  const notes = await prisma.businessNote.findMany({
+  const notes = user ? await prisma.businessNote.findMany({
     where: {
       userId: user.id,
       followUpDate: { not: null },
@@ -35,7 +33,7 @@ export default async function RemindersPage({
       followUpDate: true,
       followUpDone: true,
     },
-  });
+  }) : [];
 
   const reminders = notes.map((n) => ({
     id: n.id,

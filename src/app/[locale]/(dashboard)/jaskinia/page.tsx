@@ -11,13 +11,11 @@ export default async function JaskiniaPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true, credits: true, role: true },
-  });
-  if (!user) redirect(`/${locale}/login`);
+  }) : null;
 
   const [businesses, unlockedRaw] = await Promise.all([
     prisma.businessStrategy.findMany({
@@ -33,10 +31,10 @@ export default async function JaskiniaPage({
       },
       orderBy: { name: "asc" },
     }),
-    prisma.unlockedStrategy.findMany({
+    user ? prisma.unlockedStrategy.findMany({
       where: { userId: user.id },
       select: { businessId: true },
-    }),
+    }) : Promise.resolve([]),
   ]);
 
   const unlockedIds = new Set(unlockedRaw.map((u) => u.businessId));
@@ -101,8 +99,8 @@ export default async function JaskiniaPage({
   return (
     <JaskiniaClient
       businesses={serialized}
-      userCredits={user.credits}
-      isAdmin={user.role === "ADMIN"}
+      userCredits={user?.credits ?? 0}
+      isAdmin={user?.role === "ADMIN"}
       locale={locale}
     />
   );

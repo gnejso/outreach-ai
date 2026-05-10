@@ -10,18 +10,16 @@ export default async function ShadowBoxingPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true, credits: true, role: true },
-  });
-  if (!user) redirect(`/${locale}/login`);
+  }) : null;
 
   return (
     <ShadowBoxingClient
-      userCredits={user.credits}
-      isAdmin={user.role === "ADMIN"}
+      userCredits={user?.credits ?? 0}
+      isAdmin={user?.role === "ADMIN"}
       locale={locale}
     />
   );

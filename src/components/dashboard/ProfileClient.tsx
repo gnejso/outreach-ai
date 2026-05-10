@@ -38,15 +38,16 @@ interface Props {
     credits: number;
     freeScripts: number;
     createdAt: string;
-  };
+  } | null;
   locale: string;
+  isGuest?: boolean;
 }
 
-export function ProfileClient({ user, locale }: Props) {
+export function ProfileClient({ user, locale, isGuest = false }: Props) {
   const t = useTranslations("profile");
   const router = useRouter();
   const [saved, setSaved] = useState(false);
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN";
 
   function handleLocaleChange(newLocale: string) {
     router.replace("/profile", { locale: newLocale as typeof routing.locales[number] });
@@ -57,7 +58,54 @@ export function ProfileClient({ user, locale }: Props) {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+  const initials = user ? (user.name ?? user.email).slice(0, 2).toUpperCase() : "??";
+
+  // Guest view
+  if (isGuest || !user) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 32, color: "var(--text-primary)", marginBottom: 36 }}>
+          {t("title")}
+        </h1>
+
+        <div className="card" style={{ padding: 48, textAlign: "center", maxWidth: 600, margin: "0 auto" }}>
+          <div style={{
+            width: 120, height: 120, margin: "0 auto 24px",
+            background: "var(--accent-subtle)", borderRadius: "50%",
+            border: "2px solid var(--border-bright)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: 48 }}>👤</span>
+          </div>
+
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 28, color: "var(--text-primary)", marginBottom: 16 }}>
+            Niezalogowany
+          </h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: 16, lineHeight: 1.6, marginBottom: 32 }}>
+            Zaloguj się, aby zobaczyć swój profil, kredyty i ustawienia konta.
+          </p>
+
+          <button
+            onClick={() => router.push("/login")}
+            className="btn-primary"
+            style={{
+              padding: "14px 32px",
+              fontSize: 16,
+              fontWeight: 700,
+              background: "var(--accent)",
+              color: "white",
+              border: "none",
+              borderRadius: "var(--radius)",
+              cursor: "pointer",
+              boxShadow: "0 0 20px var(--accent-glow)",
+            }}
+          >
+            🔐 Zaloguj się
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>

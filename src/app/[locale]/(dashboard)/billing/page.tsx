@@ -10,26 +10,24 @@ export default async function BillingPage({
 }) {
   const { locale } = await params;
   const session = await getSession();
-  if (!session?.user?.email) redirect(`/${locale}/login`);
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
+  const user = session?.user?.email ? await prisma.user.findUnique({
+    where: { email: session.user.email },
     select: { id: true, credits: true, tier: true, role: true },
-  });
-  if (!user) redirect(`/${locale}/login`);
+  }) : null;
 
-  const transactions = await prisma.activity.findMany({
+  const transactions = user ? await prisma.activity.findMany({
     where: {
       userId: user.id,
       type: { in: ["CREDITS_PURCHASE", "SUBSCRIPTION_RENEWAL"] },
     },
     orderBy: { createdAt: "desc" },
     take: 20,
-  });
+  }) : [];
 
   return (
     <BillingClient
-      user={{ credits: user.credits, tier: user.tier, role: user.role }}
+      user={{ credits: user?.credits ?? 0, tier: user?.tier ?? "FREE", role: user?.role ?? "USER" }}
       locale={locale}
       transactions={transactions.map((t) => ({
         id: t.id,
