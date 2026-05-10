@@ -331,9 +331,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/login",
-    verifyRequest: "/verify",
-    error: "/login",
+    signIn: "/pl/login",
+    verifyRequest: "/pl/verify",
+    error: "/pl/login",
   },
   session: { strategy: "database" },
 });
