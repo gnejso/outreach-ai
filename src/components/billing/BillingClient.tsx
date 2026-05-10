@@ -437,6 +437,35 @@ export function BillingClient({ user, locale, transactions }: Props) {
   const firstRowPacks = CREDIT_PACKS.slice(0, 3);
   const secondRowPacks = CREDIT_PACKS.slice(3);
 
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoMessage, setPromoMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  async function redeemPromo() {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoMessage(null);
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.toUpperCase() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPromoMessage({ type: "success", text: `✅ Dodano ${data.added} kredytów!` });
+        setPromoCode("");
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setPromoMessage({ type: "error", text: data.error || "Błąd" });
+      }
+    } catch (error) {
+      setPromoMessage({ type: "error", text: "Błąd połączenia" });
+    } finally {
+      setPromoLoading(false);
+    }
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -517,6 +546,75 @@ export function BillingClient({ user, locale, transactions }: Props) {
               {currencyConfig.currency}
             </span>
           )}
+        </div>
+
+        {/* Promo Code Section */}
+        <div style={{ marginTop: 24, maxWidth: 500 }}>
+          <div style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-bright)",
+            borderRadius: "var(--radius-lg)",
+            padding: "20px 24px"
+          }}>
+            <h3 style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: 12
+            }}>
+              🎁 Masz kod rabatowy?
+            </h3>
+            <div style={{ display: "flex", gap: 10 }}>
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="Wpisz kod..."
+                disabled={promoLoading}
+                style={{
+                  flex: 1,
+                  padding: "10px 14px",
+                  fontSize: 14,
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  color: "var(--text-primary)",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  textTransform: "uppercase",
+                }}
+              />
+              <button
+                onClick={redeemPromo}
+                disabled={promoLoading || !promoCode.trim()}
+                style={{
+                  padding: "10px 20px",
+                  background: promoLoading || !promoCode.trim() ? "var(--bg-hover)" : "var(--accent)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: promoLoading || !promoCode.trim() ? "not-allowed" : "pointer",
+                  opacity: promoLoading || !promoCode.trim() ? 0.5 : 1,
+                }}
+              >
+                {promoLoading ? "..." : "Aktywuj"}
+              </button>
+            </div>
+            {promoMessage && (
+              <div style={{
+                marginTop: 12,
+                padding: "8px 12px",
+                borderRadius: 6,
+                fontSize: 13,
+                background: promoMessage.type === "success" ? "rgba(13,158,104,0.1)" : "rgba(201,59,59,0.1)",
+                color: promoMessage.type === "success" ? "#0D9E68" : "#C93B3B",
+                border: `1px solid ${promoMessage.type === "success" ? "#0D9E68" : "#C93B3B"}33`,
+              }}>
+                {promoMessage.text}
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
 

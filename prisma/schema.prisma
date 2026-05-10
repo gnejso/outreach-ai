@@ -183,3 +183,14 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model PromoCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  credits   Int
+  maxUses   Int      @default(1)
+  usedCount Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+}
