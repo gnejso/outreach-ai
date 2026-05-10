@@ -25,6 +25,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const { host } = new URL(url);
         const transport = provider.server;
 
+        if (!transport) {
+          throw new Error("Email transport not configured");
+        }
+
         const result = await transport.sendMail({
           to: email,
           from: {
