@@ -12,6 +12,8 @@ export default async function JaskiniaPage({
   const { locale } = await params;
   const session = await getSession();
 
+  if (!session?.user?.email) redirect(`/${locale}/login`);
+
   const user = session?.user?.email ? await prisma.user.findUnique({
     where: { email: session.user.email },
     select: { id: true, credits: true, role: true },
