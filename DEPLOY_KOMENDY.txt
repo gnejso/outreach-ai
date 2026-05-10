@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════
+  OUTREACH AI - DEPLOY W 4 KROKACH
+═══════════════════════════════════════════════
+
+1️⃣  NEON BAZA
+    https://neon.tech
+    → Create project
+    → Skopiuj connection string (postgresql://...)
+
+2️⃣  GITHUB
+    git add .
+    git commit -m "deploy"
+    git push
+
+3️⃣  VERCEL
+    https://vercel.com
+    → Import GitHub repo
+    → Environment Variables:
+       DATABASE_URL = [wklej z Neon]
+       AUTH_SECRET = [uruchom: openssl rand -base64 32]
+       NEXTAUTH_URL = https://twoja-nazwa.vercel.app
+       AWS_ACCESS_KEY_ID = [twój AWS Access Key]
+       AWS_SECRET_ACCESS_KEY = [twój AWS Secret Key]
+       ADMIN_EMAIL = janmikolajczak77@gmail.com
+    → Deploy
+
+4️⃣  MIGRACJE
+    $env:DATABASE_URL = "postgresql://..."
+    npx prisma migrate deploy
+
+✅ GOTOWE! Otwórz link z Vercel.
+
+═══════════════════════════════════════════════
+Szczegóły: DEPLOY_PROSTO.md

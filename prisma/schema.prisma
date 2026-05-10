@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  image         String?
+  role          String         @default("USER")
+  tier          String         @default("FREE")
+  credits       Int            @default(75)
+  freeScripts   Int            @default(11)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  activities             Activity[]
+  scriptSessions         ScriptSession[]
+  accounts               Account[]
+  sessions               Session[]
+  businessNotes          BusinessNote[]
+  unlockedStrategies     UnlockedStrategy[]
+  shadowBoxingSessions   ShadowBoxingSession[]
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  type        String
+  description String
+  creditsUsed Int
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model ScriptSession {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id])
+  sessionType      String            @default("COLD_CALL")
+  purpose          String
+  count            Int
+  creditsUsed      Int
+  scripts          String
+  createdAt        DateTime          @default(now())
+  generatedScripts GeneratedScript[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, sessionType])
+}
+
+model GeneratedScript {
+  id            String        @id @default(cuid())
+  sessionId     String
+  session       ScriptSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  businessIndex Int
+  businessName  String
+  script        String
+  createdAt     DateTime      @default(now())
+
+  @@unique([sessionId, businessIndex])
+  @@index([sessionId])
+}
+
+model BusinessNote {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  sessionId     String
+  businessIndex Int       @default(0)
+  businessName  String
+  status        String    @default("NEW")
+  note          String?   @default("")
+  followUpDate  DateTime?
+  followUpDone  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, sessionId, businessName])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([followUpDate])
+}
+
+model BusinessStrategy {
+  id          String             @id @default(cuid())
+  name        String
+  industry    String
+  category    String
+  difficulty  String
+  description String
+  teaser      String
+  strategies  StrategyCard[]
+  unlocked    UnlockedStrategy[]
+  createdAt   DateTime           @default(now())
+
+  @@index([industry])
+  @@index([category])
+  @@index([difficulty])
+}
+
+model StrategyCard {
+  id         String          @id @default(cuid())
+  businessId String
+  business   BusinessStrategy @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  content    String
+
+  @@index([businessId])
+}
+
+model UnlockedStrategy {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String
+  business   BusinessStrategy @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+
+  @@unique([userId, businessId])
+  @@index([userId])
+}
+
+model ShadowBoxingSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode         String
+  level        Int
+  personaName  String
+  transcript   String
+  feedback     String?
+  creditsUsed  Int      @default(10)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
