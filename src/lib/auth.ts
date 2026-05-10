@@ -33,14 +33,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Multilingual content
         const content: Record<string, any> = {
           pl: {
-            subject: "✨ Twój link do logowania — OutreachAI",
+            subject: "Twój link do logowania — OutreachAI",
             greeting: "Cześć!",
             title: "Dokończ logowanie do OutreachAI",
             description: "Dziękujemy, że jesteś z nami. Kliknij przycisk poniżej, aby bezpiecznie zalogować się do swojego konta:",
-            button: "🔐 Zaloguj się teraz",
+            button: "Zaloguj się teraz",
             validity: "Link jest ważny przez <strong style='color: #c8d0e0;'>24 godziny</strong>.",
             alternative: "Jeśli przycisk nie działa, użyj poniższego linku:",
-            warning: "⚠️ Uwaga bezpieczeństwa",
+            warning: "Uwaga bezpieczeństwa",
             warningText: "Jeśli nie prosiłeś o ten email, zignoruj go. Nigdy nie udostępniaj tego linku innym osobom.",
             footer: "Ten email został wysłany automatycznie z",
           },
@@ -159,7 +159,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const result = await transport.sendMail({
           to: email,
           from: `OutreachAI <${provider.from}>`,
+          replyTo: provider.from,
           subject: t.subject,
+          headers: {
+            'X-Mailer': 'OutreachAI',
+            'X-Priority': '1',
+            'Importance': 'high',
+            'X-MSMail-Priority': 'High',
+            'List-Unsubscribe': `<mailto:${provider.from}?subject=unsubscribe>`,
+          },
           text: `${t.greeting}\n\n${t.title}\n\n${t.description}\n\n${url}\n\n${t.validity}\n\n${t.warningText}\n\nPozdrawiamy,\nZespół OutreachAI`,
           html: `
 <!DOCTYPE html>
