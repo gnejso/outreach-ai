@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   async function handleGoogleSignIn() {
-    await signIn("google", { callbackUrl: "/pl/dashboard" });
+    await signIn("google", { callbackUrl: `/${locale}/dashboard` });
   }
 
   return (
