@@ -9,14 +9,19 @@ import type { CompanyRow, ColumnMapping } from "@/types";
 import { CREDIT_COSTS } from "@/types";
 import { mapColumns } from "@/lib/spreadsheet";
 
+interface Props {
+  userEmail?: string | null;
+}
+
 type Step = "upload" | "map" | "confirm" | "results";
 
-export function SmsClient() {
+export function SmsClient({ userEmail }: Props) {
   const t = useTranslations("sms");
   const tc = useTranslations("coldCall");
   const tcommon = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
+  const isGuest = !userEmail;
 
   const [step, setStep] = useState<Step>("upload");
   const [purpose, setPurpose] = useState("");
@@ -34,6 +39,10 @@ export function SmsClient() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   const onDrop = useCallback(async (files: File[]) => {
+    if (isGuest) {
+      alert(tcommon("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+      return;
+    }
     const file = files[0];
     if (!file) return;
     const formData = new FormData();
@@ -46,7 +55,7 @@ export function SmsClient() {
       setColumns(data.columns);
       setStep("map");
     }
-  }, []);
+  }, [isGuest, tcommon, router]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -56,6 +65,7 @@ export function SmsClient() {
       "text/csv": [".csv"],
     },
     multiple: false,
+    disabled: isGuest,
   });
 
   async function handleConfirmMapping() {
@@ -180,15 +190,24 @@ export function SmsClient() {
             borderRadius: 12,
             padding: 60,
             textAlign: "center",
-            cursor: "pointer",
+            cursor: isGuest ? "not-allowed" : "pointer",
             background: isDragActive ? "var(--bg-elevated)" : "var(--bg-card)",
             transition: "all 0.2s",
+            opacity: isGuest ? 0.6 : 1,
+          }}
+          onClick={(e) => {
+            if (isGuest) {
+              e.stopPropagation();
+              alert(tcommon("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+            }
           }}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps()} disabled={isGuest} />
           <div style={{ fontSize: 48, marginBottom: 16 }}>📱</div>
           <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{tc("upload")}</p>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{tc("uploadDesc")}</p>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {isGuest ? (tcommon("loginRequired") || "Zaloguj się aby użyć tej funkcji") : tc("uploadDesc")}
+          </p>
         </div>
       </div>
     );

@@ -22,6 +22,7 @@ export default async function OfertaPage({
     <OfertaClient
       userCredits={user?.credits ?? 0}
       isAdmin={user?.role === "ADMIN"}
+      userEmail={session?.user?.email}
     />
   );
 }

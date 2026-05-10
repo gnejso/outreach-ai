@@ -9,10 +9,12 @@ import { handleUnauthorized } from "@/lib/auth-redirect";
 interface Props {
   userCredits: number;
   isAdmin: boolean;
+  userEmail?: string | null;
 }
 
-export function OfertaClient({ userCredits, isAdmin }: Props) {
+export function OfertaClient({ userCredits, isAdmin, userEmail }: Props) {
   const router = useRouter();
+  const isGuest = !userEmail;
   const [credits, setCredits] = useState(userCredits);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -39,6 +41,10 @@ export function OfertaClient({ userCredits, isAdmin }: Props) {
   const canGenerate = kraj && twojaFirma && firmaKlienta && branza && usluga && cena && dataWystawienia && dataZawarcia;
 
   async function handleGenerate() {
+    if (isGuest) {
+      alert("Zaloguj się aby użyć tej funkcji");
+      return;
+    }
     if (!canGenerate) return;
 
     const cost = 25;
@@ -446,23 +452,23 @@ export function OfertaClient({ userCredits, isAdmin }: Props) {
             {/* Generate button */}
             <button
               onClick={handleGenerate}
-              disabled={!canGenerate || loading}
+              disabled={!canGenerate || loading || isGuest}
               style={{
                 width: "100%",
                 padding: "14px 24px",
-                background: canGenerate && !loading ? "var(--accent)" : "var(--bg-elevated)",
+                background: canGenerate && !loading && !isGuest ? "var(--accent)" : "var(--bg-elevated)",
                 border: "none",
                 borderRadius: "var(--radius-md)",
-                color: canGenerate && !loading ? "white" : "var(--text-muted)",
+                color: canGenerate && !loading && !isGuest ? "white" : "var(--text-muted)",
                 fontSize: 15,
                 fontWeight: 700,
-                cursor: canGenerate && !loading ? "pointer" : "not-allowed",
+                cursor: canGenerate && !loading && !isGuest ? "pointer" : "not-allowed",
                 fontFamily: "'IBM Plex Sans', sans-serif",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                boxShadow: canGenerate && !loading ? "0 0 20px var(--accent-glow)" : "none",
+                boxShadow: canGenerate && !loading && !isGuest ? "0 0 20px var(--accent-glow)" : "none",
                 transition: "all 0.2s",
               }}
             >
@@ -475,6 +481,8 @@ export function OfertaClient({ userCredits, isAdmin }: Props) {
                   />
                   <span>Generuję dokument...</span>
                 </>
+              ) : isGuest ? (
+                <span>🔒 Zaloguj się aby wygenerować dokument</span>
               ) : (
                 <>
                   <span>📄 Generuj Ofertę i Umowę</span>

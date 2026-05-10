@@ -41,6 +41,7 @@ export default async function ScraperPage({
       userCredits={user?.credits ?? 0}
       dailyLimit={tierLimit}
       usedToday={usedToday}
+      userEmail={session?.user?.email}
     />
   );
 }

@@ -17,6 +17,10 @@ interface CrmDraft {
   followUpDate: string;
 }
 
+interface Props {
+  userEmail?: string | null;
+}
+
 type Step = "upload" | "map" | "confirm" | "results";
 
 function parseSections(script: string): Record<string, string> {
@@ -43,11 +47,12 @@ function parseSections(script: string): Record<string, string> {
   return sections;
 }
 
-export function ColdCallClient() {
+export function ColdCallClient({ userEmail }: Props) {
   const t = useTranslations("coldCall");
   const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
+  const isGuest = !userEmail;
 
   const [step, setStep] = useState<Step>("upload");
   const [purpose, setPurpose] = useState("");
@@ -68,6 +73,10 @@ export function ColdCallClient() {
   const [savedIdx, setSavedIdx] = useState<Set<number>>(new Set());
 
   const onDrop = useCallback(async (files: File[]) => {
+    if (isGuest) {
+      alert(tc("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+      return;
+    }
     const file = files[0];
     if (!file) return;
     const formData = new FormData();
@@ -80,7 +89,7 @@ export function ColdCallClient() {
       setColumns(data.columns);
       setStep("map");
     }
-  }, []);
+  }, [isGuest, tc, router]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -90,6 +99,7 @@ export function ColdCallClient() {
       "text/csv": [".csv"],
     },
     multiple: false,
+    disabled: isGuest,
   });
 
   async function handleConfirmMapping() {
@@ -246,15 +256,24 @@ export function ColdCallClient() {
             borderRadius: 12,
             padding: 60,
             textAlign: "center",
-            cursor: "pointer",
+            cursor: isGuest ? "not-allowed" : "pointer",
             background: isDragActive ? "var(--bg-elevated)" : "var(--bg-card)",
             transition: "all 0.2s",
+            opacity: isGuest ? 0.6 : 1,
+          }}
+          onClick={(e) => {
+            if (isGuest) {
+              e.stopPropagation();
+              alert(tc("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+            }
           }}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps()} disabled={isGuest} />
           <div style={{ fontSize: 48, marginBottom: 16 }} suppressHydrationWarning>📄</div>
           <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t("upload")}</p>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("uploadDesc")}</p>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {isGuest ? (tc("loginRequired") || "Zaloguj się aby użyć tej funkcji") : t("uploadDesc")}
+          </p>
         </div>
 
         <div style={{ marginTop: 40, padding: 24, background: "var(--bg-elevated)", borderRadius: 12 }}>

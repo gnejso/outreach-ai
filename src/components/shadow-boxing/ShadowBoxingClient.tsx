@@ -21,6 +21,7 @@ interface Props {
   userCredits: number;
   isAdmin: boolean;
   locale: string;
+  userEmail?: string | null;
 }
 
 type Mode = "select" | "text" | "voice";
@@ -32,9 +33,10 @@ const DIFF_COLOR: Record<string, string> = {
   "Trudny": "#C93B3B",
 };
 
-export function ShadowBoxingClient({ userCredits, isAdmin, locale }: Props) {
+export function ShadowBoxingClient({ userCredits, isAdmin, locale, userEmail }: Props) {
   const t = useTranslations("shadowBoxing");
   const router = useRouter();
+  const isGuest = !userEmail;
 
   const personaNames = ["p1name","p2name","p3name","p4name","p5name","p6name","p7name","p8name","p9name"] as const;
   const personaDescs = ["p1desc","p2desc","p3desc","p4desc","p5desc","p6desc","p7desc","p8desc","p9desc"] as const;
@@ -92,6 +94,10 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale }: Props) {
   }
 
   function selectLevel(level: PersonaLevel, selectedMode: Mode) {
+    if (isGuest) {
+      alert(t("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+      return;
+    }
     setSelectedLevel(level);
     setMode(selectedMode);
     setMessages([]);
@@ -279,14 +285,28 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale }: Props) {
               title={t("textMode")}
               subtitle={t("textModeSub")}
               description={t("textModeDesc")}
-              onClick={() => setMode("text")}
+              onClick={() => {
+                if (isGuest) {
+                  alert(t("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+                } else {
+                  setMode("text");
+                }
+              }}
+              disabled={isGuest}
             />
             <ModeCard
               emoji="🎤"
               title={t("voiceMode")}
               subtitle={t("voiceModeSub")}
               description={t("voiceModeDesc")}
-              onClick={() => setMode("voice")}
+              onClick={() => {
+                if (isGuest) {
+                  alert(t("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+                } else {
+                  setMode("voice");
+                }
+              }}
+              disabled={isGuest}
             />
           </div>
         </div>
@@ -681,21 +701,24 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale }: Props) {
   );
 }
 
-function ModeCard({ emoji, title, subtitle, description, onClick }: {
-  emoji: string; title: string; subtitle: string; description: string; onClick: () => void;
+function ModeCard({ emoji, title, subtitle, description, onClick, disabled }: {
+  emoji: string; title: string; subtitle: string; description: string; onClick: () => void; disabled?: boolean;
 }) {
   return (
     <div
       onClick={onClick}
       style={{
         background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-xl)", padding: 28, cursor: "pointer",
+        borderRadius: "var(--radius-xl)", padding: 28, cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.15s", textAlign: "center",
+        opacity: disabled ? 0.6 : 1,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(42,127,255,0.4)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 30px rgba(42,127,255,0.1)";
+        if (!disabled) {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(42,127,255,0.4)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 30px rgba(42,127,255,0.1)";
+        }
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";

@@ -21,6 +21,7 @@ export default async function ShadowBoxingPage({
       userCredits={user?.credits ?? 0}
       isAdmin={user?.role === "ADMIN"}
       locale={locale}
+      userEmail={session?.user?.email}
     />
   );
 }

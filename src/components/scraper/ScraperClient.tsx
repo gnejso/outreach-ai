@@ -73,10 +73,12 @@ interface Props {
   userCredits: number;
   dailyLimit: number;
   usedToday: number;
+  userEmail?: string | null;
 }
 
-export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, usedToday }: Props) {
+export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, usedToday, userEmail }: Props) {
   const router = useRouter();
+  const isGuest = !userEmail;
   const [mode, setMode] = useState<Mode>("scraper");
   // Scraper state
   const [industry, setIndustry] = useState("");
@@ -128,6 +130,10 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
   }
 
   const onDrop = useCallback(async (files: File[]) => {
+    if (isGuest) {
+      alert("Zaloguj się aby użyć tej funkcji");
+      return;
+    }
     const file = files[0];
     if (!file) return;
     setFileName(file.name);
@@ -147,7 +153,7 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
       }
     };
     reader.readAsArrayBuffer(file);
-  }, []);
+  }, [isGuest]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
@@ -158,9 +164,14 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
     },
     noClick: true,
     multiple: false,
+    disabled: isGuest,
   });
 
   async function startScraping() {
+    if (isGuest) {
+      alert("Zaloguj się aby użyć tej funkcji");
+      return;
+    }
     if (!industry.trim() || !city.trim()) return;
     setScraping(true);
     setScraped([]);
@@ -428,19 +439,19 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
               ) : (
                 <button
                   onClick={startScraping}
-                  disabled={!industry.trim() || !city.trim()}
+                  disabled={!industry.trim() || !city.trim() || isGuest}
                   style={{
                     width: "100%", height: 60,
-                    background: (!industry.trim() || !city.trim()) ? "var(--bg-elevated)" : "var(--accent)",
+                    background: (!industry.trim() || !city.trim() || isGuest) ? "var(--bg-elevated)" : "var(--accent)",
                     border: "none", borderRadius: "var(--radius-md)",
-                    color: (!industry.trim() || !city.trim()) ? "var(--text-muted)" : "white",
+                    color: (!industry.trim() || !city.trim() || isGuest) ? "var(--text-muted)" : "white",
                     fontSize: 18, fontWeight: 800,
-                    cursor: (!industry.trim() || !city.trim()) ? "not-allowed" : "pointer",
+                    cursor: (!industry.trim() || !city.trim() || isGuest) ? "not-allowed" : "pointer",
                     fontFamily: "'IBM Plex Sans', sans-serif",
-                    boxShadow: (!industry.trim() || !city.trim()) ? "none" : "0 0 28px var(--accent-glow)",
+                    boxShadow: (!industry.trim() || !city.trim() || isGuest) ? "none" : "0 0 28px var(--accent-glow)",
                   }}
                 >
-                  🔍 Szukaj firm na Google Maps
+                  {isGuest ? "🔒 Zaloguj się aby użyć scrapera" : "🔍 Szukaj firm na Google Maps"}
                 </button>
               )}
               {scrapeError && (
@@ -467,18 +478,24 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
                   border: `2px dashed ${isDragActive ? "var(--accent)" : "var(--border)"}`,
                   borderRadius: "var(--radius-lg)", padding: "40px 28px", textAlign: "center",
                   background: isDragActive ? "var(--accent-subtle)" : "var(--bg-elevated)", transition: "all 0.2s", marginBottom: 20,
+                  opacity: isGuest ? 0.6 : 1,
+                  cursor: isGuest ? "not-allowed" : "default",
                 }}
               >
-                <input {...getInputProps()} />
+                <input {...getInputProps()} disabled={isGuest} />
                 <div style={{ fontSize: 32, marginBottom: 10 }}>📄</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)", marginBottom: 6 }}>
-                  {fileName ? `✓ ${fileName}` : "Przeciągnij plik Excel lub CSV tutaj"}
+                  {isGuest ? "🔒 Zaloguj się aby wgrać plik" : fileName ? `✓ ${fileName}` : "Przeciągnij plik Excel lub CSV tutaj"}
                 </div>
-                <div style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 14 }}>— lub —</div>
-                <button onClick={open} style={{ padding: "10px 22px", background: "var(--accent)", border: "none", borderRadius: "var(--radius-md)", color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                  📂 Kliknij aby wybrać plik
-                </button>
-                <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 10 }}>Akceptowane: .xlsx .xls .csv</div>
+                {!isGuest && (
+                  <>
+                    <div style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 14 }}>— lub —</div>
+                    <button onClick={open} style={{ padding: "10px 22px", background: "var(--accent)", border: "none", borderRadius: "var(--radius-md)", color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                      📂 Kliknij aby wybrać plik
+                    </button>
+                    <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 10 }}>Akceptowane: .xlsx .xls .csv</div>
+                  </>
+                )}
               </div>
 
               {headers.length > 0 && (
