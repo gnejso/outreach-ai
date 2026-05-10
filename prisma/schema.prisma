@@ -14,8 +14,8 @@ model User {
   image         String?
   role          String         @default("USER")
   tier          String         @default("FREE")
-  credits       Int            @default(75)
-  freeScripts   Int            @default(11)
+  credits       Int            @default(120)
+  freeScripts   Int            @default(10)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   activities             Activity[]

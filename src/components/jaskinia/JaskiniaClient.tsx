@@ -30,6 +30,7 @@ interface Props {
   userCredits: number;
   isAdmin: boolean;
   locale: string;
+  userEmail?: string | null;
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -44,7 +45,8 @@ const STRATEGY_NUM_LABEL: Record<string, string> = {
   "3": "3.",
 };
 
-export function JaskiniaClient({ businesses, userCredits, isAdmin }: Props) {
+export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail }: Props) {
+  const isGuest = !userEmail;
   const t = useTranslations("jaskinia");
   const tSb = useTranslations("shadowBoxing");
   const nextRouter = useNextRouter();
@@ -86,6 +88,10 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin }: Props) {
   }
 
   async function unlock(b: Business) {
+    if (isGuest) {
+      alert("Zaloguj się aby odblokować strategię");
+      return;
+    }
     if (isUnlocked(b)) {
       setSelectedBusiness({ ...b, unlocked: true });
       return;

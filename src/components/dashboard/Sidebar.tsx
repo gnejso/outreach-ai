@@ -171,15 +171,22 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
             </div>
           </div>
           {!isAdmin && (
-            <div style={{ height: 3, background: "var(--bg-hover)", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{
-                height: "100%",
-                width: `${Math.min((credits / 500) * 100, 100)}%`,
-                background: credits < 50 ? "var(--danger)" : "var(--accent)",
-                borderRadius: 2,
-                boxShadow: credits > 0 ? "0 0 6px var(--accent-glow)" : "none",
-              }} />
-            </div>
+            <>
+              <div style={{ height: 3, background: "var(--bg-hover)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%",
+                  width: `${Math.min((credits / 500) * 100, 100)}%`,
+                  background: credits < 50 ? "var(--danger)" : "var(--accent)",
+                  borderRadius: 2,
+                  boxShadow: credits > 0 ? "0 0 6px var(--accent-glow)" : "none",
+                }} />
+              </div>
+              {freeScripts > 0 && (
+                <div style={{ marginTop: 8, fontSize: 11, color: "var(--success)", fontWeight: 600 }}>
+                  + {freeScripts} darmowych Cold Call
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
