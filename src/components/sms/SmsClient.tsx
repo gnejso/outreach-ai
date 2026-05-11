@@ -40,7 +40,7 @@ export function SmsClient({ userEmail }: Props) {
 
   const onDrop = useCallback(async (files: File[]) => {
     if (isGuest) {
-      alert(tcommon("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+      window.location.href = "/pl/login";
       return;
     }
     const file = files[0];
@@ -198,7 +198,7 @@ export function SmsClient({ userEmail }: Props) {
           onClick={(e) => {
             if (isGuest) {
               e.stopPropagation();
-              alert(tcommon("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+              window.location.href = "/pl/login";
             }
           }}
         >
@@ -206,7 +206,7 @@ export function SmsClient({ userEmail }: Props) {
           <div style={{ fontSize: 48, marginBottom: 16 }}>📱</div>
           <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{tc("upload")}</p>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {isGuest ? (tcommon("loginRequired") || "Zaloguj się aby użyć tej funkcji") : tc("uploadDesc")}
+            {isGuest ? "🔐 Zaloguj się aby wgrać plik" : tc("uploadDesc")}
           </p>
         </div>
       </div>

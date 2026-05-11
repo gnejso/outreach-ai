@@ -131,7 +131,7 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
 
   const onDrop = useCallback(async (files: File[]) => {
     if (isGuest) {
-      alert("Zaloguj się aby użyć tej funkcji");
+      window.location.href = "/pl/login";
       return;
     }
     const file = files[0];
@@ -169,7 +169,7 @@ export function ScraperClient({ userTier, userRole, userCredits, dailyLimit, use
 
   async function startScraping() {
     if (isGuest) {
-      alert("Zaloguj się aby użyć tej funkcji");
+      window.location.href = "/pl/login";
       return;
     }
     if (!industry.trim() || !city.trim()) return;

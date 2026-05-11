@@ -74,7 +74,7 @@ export function ColdCallClient({ userEmail }: Props) {
 
   const onDrop = useCallback(async (files: File[]) => {
     if (isGuest) {
-      alert(tc("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+      window.location.href = "/pl/login";
       return;
     }
     const file = files[0];
@@ -264,7 +264,7 @@ export function ColdCallClient({ userEmail }: Props) {
           onClick={(e) => {
             if (isGuest) {
               e.stopPropagation();
-              alert(tc("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+              window.location.href = "/pl/login";
             }
           }}
         >
@@ -272,7 +272,7 @@ export function ColdCallClient({ userEmail }: Props) {
           <div style={{ fontSize: 48, marginBottom: 16 }} suppressHydrationWarning>📄</div>
           <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t("upload")}</p>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {isGuest ? (tc("loginRequired") || "Zaloguj się aby użyć tej funkcji") : t("uploadDesc")}
+            {isGuest ? "🔐 Zaloguj się aby wgrać plik" : t("uploadDesc")}
           </p>
         </div>
 

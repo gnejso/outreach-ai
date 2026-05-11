@@ -95,7 +95,7 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale, userEmail }: 
 
   function selectLevel(level: PersonaLevel, selectedMode: Mode) {
     if (isGuest) {
-      alert(t("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+      window.location.href = "/pl/login";
       return;
     }
     setSelectedLevel(level);
@@ -287,7 +287,7 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale, userEmail }: 
               description={t("textModeDesc")}
               onClick={() => {
                 if (isGuest) {
-                  alert(t("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+                  window.location.href = "/pl/login";
                 } else {
                   setMode("text");
                 }
@@ -301,7 +301,7 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale, userEmail }: 
               description={t("voiceModeDesc")}
               onClick={() => {
                 if (isGuest) {
-                  alert(t("loginRequired") || "Zaloguj się aby użyć tej funkcji");
+                  window.location.href = "/pl/login";
                 } else {
                   setMode("voice");
                 }
@@ -333,7 +333,7 @@ export function ShadowBoxingClient({ userCredits, isAdmin, locale, userEmail }: 
                 key={l.level}
                 onClick={() => {
                   if (isGuest) {
-                    alert("Zaloguj się aby wybrać level");
+                    window.location.href = "/pl/login";
                   } else {
                     selectLevel(l, mode);
                   }

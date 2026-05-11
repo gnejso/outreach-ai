@@ -27,6 +27,7 @@ export default async function AudytPage({
       userCredits={user?.credits ?? 0}
       isAdmin={user?.role === "ADMIN"}
       locale={locale}
+      userEmail={session?.user?.email}
       recentAudits={recentAudits.map((a) => ({
         ...a,
         createdAt: a.createdAt.toISOString(),

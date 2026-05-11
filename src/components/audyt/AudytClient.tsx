@@ -15,6 +15,7 @@ interface Props {
   isAdmin: boolean;
   locale: string;
   recentAudits: AuditRecord[];
+  userEmail?: string | null;
 }
 
 const INDUSTRIES = [
@@ -96,7 +97,8 @@ function ReportView({ report, onClose }: { report: string; onClose: () => void }
   );
 }
 
-export function AudytClient({ userCredits, isAdmin, locale, recentAudits }: Props) {
+export function AudytClient({ userCredits, isAdmin, locale, recentAudits, userEmail }: Props) {
+  const isGuest = !userEmail;
   const [url, setUrl] = useState("");
   const [industry, setIndustry] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,6 +110,7 @@ export function AudytClient({ userCredits, isAdmin, locale, recentAudits }: Prop
   const [viewingReport, setViewingReport] = useState<string | null>(null);
 
   async function handleAudit() {
+    if (isGuest) { window.location.href = `/${locale}/login`; return; }
     if (!url.trim()) return;
     setLoading(true);
     setError(null);
@@ -224,24 +227,22 @@ export function AudytClient({ userCredits, isAdmin, locale, recentAudits }: Prop
 
             <button
               onClick={handleAudit}
-              disabled={loading || !url.trim() || (!isAdmin && credits < 25)}
+              disabled={loading || (!isGuest && !url.trim()) || (!isAdmin && !isGuest && credits < 25)}
               style={{
                 width: "100%",
                 padding: "14px 0",
-                background: loading || !url.trim() || (!isAdmin && credits < 25)
-                  ? "var(--bg-hover)"
-                  : "var(--accent)",
+                background: isGuest ? "var(--accent)" : (loading || !url.trim() || (!isAdmin && credits < 25) ? "var(--bg-hover)" : "var(--accent)"),
                 color: "white",
                 border: "none",
                 borderRadius: "var(--radius-md)",
                 fontSize: 15,
                 fontWeight: 700,
-                cursor: loading || !url.trim() || (!isAdmin && credits < 25) ? "not-allowed" : "pointer",
-                opacity: loading || !url.trim() || (!isAdmin && credits < 25) ? 0.6 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
                 transition: "opacity 0.15s",
               }}
             >
-              {loading ? "⏳ Analizuję stronę..." : "🔍 Analizuj stronę — 25 kredytów"}
+              {loading ? "⏳ Analizuję stronę..." : isGuest ? "🔐 Zaloguj się aby analizować" : "🔍 Analizuj stronę — 25 kredytów"}
             </button>
           </div>
 
