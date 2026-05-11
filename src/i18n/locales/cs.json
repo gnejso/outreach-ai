@@ -12,7 +12,8 @@
     "profile": "Profil",
     "billing": "Fakturace",
     "logout": "Odhlásit",
-    "language": "Jazyk"
+    "language": "Jazyk",
+    "audyt": "Website Audit"
   },
   "credits": {
     "label": "KREDITY"
@@ -86,10 +87,10 @@
     "generating": "Generování...",
     "results": "Výsledky",
     "copyScript": "Kopírovat skript",
-    "copied": "Zkopírováno!",
+    "copied": "Zkopírováno",
     "exportAll": "Exportovat vše",
     "prev": "Předchozí firma",
-    "next": "Další firma",
+    "next": "Další",
     "insufficientCredits": "Nedostatečné kredity",
     "needCredits": "Potřebujete ještě {n} kreditů",
     "topUp": "Dobít kredity",
@@ -104,14 +105,12 @@
     "cost": "Náklady:",
     "balanceAfter": "Zůstatek po:",
     "previous": "Předchozí",
-    "next": "Další",
     "firmXofY": "Firma {current} / {total}",
     "reviews": "recenze",
     "ratingLabel": "Hodnocení:",
     "generatingScript": "Generování skriptu...",
     "loadingDots": "Načítání...",
     "copy": "Kopírovat",
-    "copied": "Zkopírováno",
     "crmNotes": "CRM / Poznámky",
     "status": "Stav",
     "followUp": "Follow-up",

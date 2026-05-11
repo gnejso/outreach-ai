@@ -89,16 +89,18 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
     return b.unlocked || localUnlocked.has(b.id);
   }
 
+  const UNLOCK_COST = isFree ? 6 : 0;
+
   async function unlock(b: Business) {
     if (isGuest) {
       alert("Zaloguj się aby odblokować strategię");
       return;
     }
-    if (isUnlocked(b)) {
+    if (isUnlocked(b) || !isFree) {
       setSelectedBusiness({ ...b, unlocked: true });
       return;
     }
-    if (!isAdmin && credits < 10) {
+    if (!isAdmin && credits < UNLOCK_COST) {
       alert(t("insufficientCredits"));
       return;
     }
@@ -116,7 +118,7 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
         return;
       }
       setLocalUnlocked((prev) => new Set([...prev, b.id]));
-      if (!isAdmin) setCredits((c) => c - 10);
+      if (!isAdmin) setCredits((c) => c - UNLOCK_COST);
       setSelectedBusiness({ ...b, unlocked: true });
     } finally {
       setUnlockingId(null);
@@ -230,104 +232,103 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
           gap: 16,
         }}>
           {filtered.map((b) => {
-            const unlocked = isUnlocked(b);
+            const unlocked = isUnlocked(b) || !isFree;
             const isLocking = unlockingId === b.id;
+            const canView = unlocked || isAdmin;
             return (
               <div
                 key={b.id}
                 onClick={() => unlock(b)}
                 style={{
                   background: "var(--bg-card)",
-                  border: `1px solid ${unlocked ? "rgba(42,127,255,0.3)" : "var(--border)"}`,
+                  border: `1px solid ${canView ? "rgba(42,127,255,0.3)" : "var(--border)"}`,
                   borderRadius: "var(--radius-lg)",
                   padding: 20,
                   cursor: "pointer",
                   transition: "all 0.15s",
                   position: "relative",
                   overflow: "hidden",
-                  boxShadow: unlocked ? "0 0 20px rgba(42,127,255,0.07)" : "none",
+                  boxShadow: canView ? "0 0 20px rgba(42,127,255,0.07)" : "none",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = unlocked ? "rgba(42,127,255,0.5)" : "var(--border-bright)";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = canView ? "rgba(42,127,255,0.5)" : "var(--border-bright)";
                   (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = unlocked ? "rgba(42,127,255,0.3)" : "var(--border)";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = canView ? "rgba(42,127,255,0.3)" : "var(--border)";
                   (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
                 }}
               >
-                {/* Lock overlay for locked cards */}
-                {!unlocked && (
-                  <div style={{
-                    position: "absolute",
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: "rgba(5,10,20,0.45)",
-                    borderRadius: "var(--radius-lg)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    zIndex: 2,
-                    backdropFilter: "blur(2px)",
-                  }}>
-                    <span style={{ fontSize: 28 }}>🔒</span>
-                    <span style={{
-                      background: "var(--accent)",
-                      color: "white",
-                      padding: "6px 16px",
-                      borderRadius: 8,
-                      fontSize: 13,
-                      fontWeight: 600,
-                    }}>
-                      {isLocking ? t("unlocking") : (isFree ? "TIER 1+" : "Odblokuj za 10 💎")}
-                    </span>
-                  </div>
-                )}
-
-                {/* Card content */}
+                {/* Card content — always visible */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, gap: 8 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4, flex: 1, filter: unlocked ? "none" : "blur(3px)" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4, flex: 1 }}>
                     {b.name}
                   </h3>
-                  {unlocked && <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>}
+                  {canView && <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>}
                 </div>
 
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                   <span style={{
                     background: "rgba(42,127,255,0.1)",
                     border: "1px solid rgba(42,127,255,0.2)",
-                    borderRadius: 6,
-                    padding: "2px 8px",
-                    fontSize: 11,
-                    color: "var(--accent-bright)",
-                    filter: unlocked ? "none" : "blur(3px)",
+                    borderRadius: 6, padding: "2px 8px",
+                    fontSize: 11, color: "var(--accent-bright)",
                   }}>
                     {b.industry}
                   </span>
                   <span style={{
                     background: `${DIFFICULTY_COLOR[b.difficulty]}20`,
                     border: `1px solid ${DIFFICULTY_COLOR[b.difficulty]}50`,
-                    borderRadius: 6,
-                    padding: "2px 8px",
-                    fontSize: 11,
-                    color: DIFFICULTY_COLOR[b.difficulty],
+                    borderRadius: 6, padding: "2px 8px",
+                    fontSize: 11, color: DIFFICULTY_COLOR[b.difficulty],
                   }}>
                     {diffLabel(b.difficulty)}
                   </span>
                 </div>
 
-                <p style={{
-                  fontSize: 12,
-                  color: "var(--text-secondary)",
-                  lineHeight: 1.5,
-                  filter: unlocked ? "none" : "blur(4px)",
-                }}>
-                  {unlocked ? b.description : b.teaser}
-                </p>
+                {/* First strategy title always visible */}
+                {b.strategies[0] && (
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
+                    <strong>1.</strong> {b.strategies[0].title}
+                  </p>
+                )}
 
-                {unlocked && (
-                  <div style={{ marginTop: 12, display: "flex", gap: 6 }}>
+                {/* Blurred strategies 2 & 3 for free tier */}
+                {!canView ? (
+                  <div style={{ position: "relative" }}>
+                    <div style={{ filter: "blur(4px)", userSelect: "none", opacity: 0.6 }}>
+                      {b.strategies.slice(1).map((s, i) => (
+                        <p key={s.id} style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 4 }}>
+                          <strong>{i + 2}.</strong> {s.title}
+                        </p>
+                      ))}
+                    </div>
+                    <div style={{
+                      marginTop: 12,
+                      padding: "10px 12px",
+                      background: "rgba(42,127,255,0.08)",
+                      border: "1px solid rgba(42,127,255,0.25)",
+                      borderRadius: 8,
+                      textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                        🔒 Odblokuj wszystkie 3 strategie — 6 kredytów
+                      </div>
+                      <div style={{
+                        display: "inline-block",
+                        padding: "6px 16px",
+                        background: isLocking ? "var(--bg-hover)" : "var(--accent)",
+                        color: "white",
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}>
+                        {isLocking ? t("unlocking") : "Odblokuj teraz"}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 4, display: "flex", gap: 6 }}>
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                       {b.strategies.length} {t("strategies")} →
                     </span>

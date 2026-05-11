@@ -12,7 +12,8 @@
     "profile": "Profil",
     "billing": "Abrechnung",
     "logout": "Abmelden",
-    "language": "Sprache"
+    "language": "Sprache",
+    "audyt": "Website Audit"
   },
   "credits": {
     "label": "GUTHABEN"
@@ -86,10 +87,10 @@
     "generating": "Generiere...",
     "results": "Ergebnisse",
     "copyScript": "Skript kopieren",
-    "copied": "Kopiert!",
+    "copied": "Kopiert",
     "exportAll": "Alle exportieren",
     "prev": "Vorheriges Unternehmen",
-    "next": "Nächstes Unternehmen",
+    "next": "Nächste",
     "insufficientCredits": "Nicht genug Credits",
     "needCredits": "Sie benötigen {n} weitere Credits",
     "topUp": "Credits aufladen",
@@ -104,14 +105,12 @@
     "cost": "Kosten:",
     "balanceAfter": "Guthaben danach:",
     "previous": "Vorherige",
-    "next": "Nächste",
     "firmXofY": "Unternehmen {current} / {total}",
     "reviews": "Bewertungen",
     "ratingLabel": "Bewertung:",
     "generatingScript": "Skript wird generiert...",
     "loadingDots": "Laden...",
     "copy": "Kopieren",
-    "copied": "Kopiert",
     "crmNotes": "CRM / Notizen",
     "status": "Status",
     "followUp": "Follow-up",

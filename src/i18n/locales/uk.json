@@ -12,7 +12,8 @@
     "profile": "Профіль",
     "billing": "Оплата",
     "logout": "Вийти",
-    "language": "Мова"
+    "language": "Мова",
+    "audyt": "Website Audit"
   },
   "credits": {
     "label": "КРЕДИТИ"
@@ -86,10 +87,10 @@
     "generating": "Генерація...",
     "results": "Результати",
     "copyScript": "Скопіювати скрипт",
-    "copied": "Скопійовано!",
+    "copied": "Скопійовано",
     "exportAll": "Експортувати все",
     "prev": "Попередня компанія",
-    "next": "Наступна компанія",
+    "next": "Наступна",
     "insufficientCredits": "Недостатньо кредитів",
     "needCredits": "Вам потрібно ще {n} кредитів",
     "topUp": "Поповнити кредити",
@@ -104,14 +105,12 @@
     "cost": "Вартість:",
     "balanceAfter": "Баланс після:",
     "previous": "Попередня",
-    "next": "Наступна",
     "firmXofY": "Компанія {current} / {total}",
     "reviews": "відгуків",
     "ratingLabel": "Рейтинг:",
     "generatingScript": "Генерація скрипту...",
     "loadingDots": "Завантаження...",
     "copy": "Копіювати",
-    "copied": "Скопійовано",
     "crmNotes": "CRM / Нотатки",
     "status": "Статус",
     "followUp": "Follow-up",

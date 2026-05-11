@@ -12,7 +12,8 @@
     "profile": "Profiel",
     "billing": "Facturering",
     "logout": "Uitloggen",
-    "language": "Taal"
+    "language": "Taal",
+    "audyt": "Website Audit"
   },
   "credits": {
     "label": "TEGOED"
@@ -86,10 +87,10 @@
     "generating": "Genereren...",
     "results": "Resultaten",
     "copyScript": "Script kopiëren",
-    "copied": "Gekopieerd!",
+    "copied": "Gekopieerd",
     "exportAll": "Alles exporteren",
     "prev": "Vorig bedrijf",
-    "next": "Volgend bedrijf",
+    "next": "Volgende",
     "insufficientCredits": "Onvoldoende credits",
     "needCredits": "Je hebt nog {n} credits nodig",
     "topUp": "Credits opladen",
@@ -104,14 +105,12 @@
     "cost": "Kosten:",
     "balanceAfter": "Saldo na:",
     "previous": "Vorige",
-    "next": "Volgende",
     "firmXofY": "Bedrijf {current} / {total}",
     "reviews": "beoordelingen",
     "ratingLabel": "Beoordeling:",
     "generatingScript": "Script genereren...",
     "loadingDots": "Laden...",
     "copy": "Kopiëren",
-    "copied": "Gekopieerd",
     "crmNotes": "CRM / Notities",
     "status": "Status",
     "followUp": "Follow-up",

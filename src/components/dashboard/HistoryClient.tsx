@@ -44,6 +44,8 @@ const TYPE_ICONS: Record<ActivityType, string> = {
   NOTE_SAVED: "📝",
   SCRAPER_USE: "🗺️",
   OFERTA_UMOWA: "📄",
+  JASKINIA_UNLOCK: "🦁",
+  WEB_AUDIT: "🔍",
 };
 
 const ALL_TYPES: ActivityType[] = [
@@ -52,6 +54,8 @@ const ALL_TYPES: ActivityType[] = [
   "SMS_SEND",
   "SCRAPER_USE",
   "OFERTA_UMOWA",
+  "JASKINIA_UNLOCK",
+  "WEB_AUDIT",
   "CREDITS_PURCHASE",
   "SUBSCRIPTION_RENEWAL",
   "STATUS_CHANGE",

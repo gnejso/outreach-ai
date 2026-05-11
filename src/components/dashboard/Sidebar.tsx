@@ -51,6 +51,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
     { href: "/scraper", label: t("findCompanies"), icon: <ScraperIcon /> },
     { href: "/reminders", label: t("followUps"), icon: <BellIcon />, badge: true },
     { href: "/jaskinia", label: t("jaskinia"), icon: <LionIcon /> },
+    { href: "/audyt", label: t("audyt"), icon: <AuditIcon /> },
     { href: "/shadow-boxing", label: t("shadowBoxing"), icon: <BoxingIcon /> },
     { href: "/oferta", label: t("oferta"), icon: <DocumentIcon /> },
     { href: "/history", label: t("history"), icon: <HistoryIcon /> },
@@ -419,6 +420,10 @@ function ScraperIcon() {
 
 function LionIcon() {
   return <span style={{ fontSize: 14, lineHeight: 1 }}>🦁</span>;
+}
+
+function AuditIcon() {
+  return <span style={{ fontSize: 14, lineHeight: 1 }}>🔍</span>;
 }
 
 function BoxingIcon() {

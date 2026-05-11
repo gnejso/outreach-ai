@@ -25,6 +25,7 @@ model User {
   businessNotes          BusinessNote[]
   unlockedStrategies     UnlockedStrategy[]
   shadowBoxingSessions   ShadowBoxingSession[]
+  webAudits              WebAudit[]
 }
 
 model Activity {
@@ -185,12 +186,29 @@ model VerificationToken {
 }
 
 model PromoCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
+  id        String    @id @default(cuid())
+  code      String    @unique
+  tier      String?
   credits   Int
-  maxUses   Int      @default(1)
-  usedCount Int      @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  maxUses   Int       @default(1)
+  usedCount Int       @default(0)
+  usedBy    String?
+  usedAt    DateTime?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
   expiresAt DateTime?
+}
+
+model WebAudit {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url       String
+  industry  String?
+  report    String
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
 }

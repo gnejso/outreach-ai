@@ -9,7 +9,9 @@ export type ActivityType =
   | "STATUS_CHANGE"
   | "NOTE_SAVED"
   | "SCRAPER_USE"
-  | "OFERTA_UMOWA";
+  | "OFERTA_UMOWA"
+  | "JASKINIA_UNLOCK"
+  | "WEB_AUDIT";
 
 export interface User {
   id: string;

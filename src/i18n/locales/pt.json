@@ -12,7 +12,8 @@
     "profile": "Perfil",
     "billing": "Faturamento",
     "logout": "Sair",
-    "language": "Idioma"
+    "language": "Idioma",
+    "audyt": "Website Audit"
   },
   "credits": {
     "label": "CRÉDITOS"
@@ -86,10 +87,10 @@
     "generating": "Gerando...",
     "results": "Resultados",
     "copyScript": "Copiar script",
-    "copied": "Copiado!",
+    "copied": "Copiado",
     "exportAll": "Exportar tudo",
     "prev": "Empresa anterior",
-    "next": "Próxima empresa",
+    "next": "Próximo",
     "insufficientCredits": "Créditos insuficientes",
     "needCredits": "Você precisa de {n} créditos a mais",
     "topUp": "Recarregar créditos",
@@ -104,14 +105,12 @@
     "cost": "Custo:",
     "balanceAfter": "Saldo após:",
     "previous": "Anterior",
-    "next": "Próximo",
     "firmXofY": "Empresa {current} / {total}",
     "reviews": "avaliações",
     "ratingLabel": "Avaliação:",
     "generatingScript": "Gerando script...",
     "loadingDots": "Carregando...",
     "copy": "Copiar",
-    "copied": "Copiado",
     "crmNotes": "CRM / Notas",
     "status": "Status",
     "followUp": "Follow-up",

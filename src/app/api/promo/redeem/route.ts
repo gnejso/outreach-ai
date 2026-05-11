@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
+const TIER_CREDITS: Record<string, number> = {
+  TIER1: 400,
+  TIER2: 1500,
+  TIER3: 2500,
+};
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
@@ -14,7 +20,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid code" }, { status: 400 });
     }
 
-    // Find promo code
     const promoCode = await prisma.promoCode.findUnique({
       where: { code: code.toUpperCase() },
     });
@@ -35,23 +40,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kod został już wykorzystany" }, { status: 400 });
     }
 
-    // Add credits to user and increment usage
+    const tierName = promoCode.tier;
+    const creditsToAdd = tierName && TIER_CREDITS[tierName] ? TIER_CREDITS[tierName] : promoCode.credits;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    const userUpdateData: Record<string, unknown> = {
+      credits: { increment: creditsToAdd },
+    };
+    if (tierName && TIER_CREDITS[tierName]) {
+      userUpdateData.tier = tierName;
+    }
+
     const [user] = await prisma.$transaction([
       prisma.user.update({
         where: { email: session.user.email },
-        data: { credits: { increment: promoCode.credits } },
-        select: { credits: true },
+        data: userUpdateData,
+        select: { credits: true, tier: true },
       }),
       prisma.promoCode.update({
         where: { id: promoCode.id },
-        data: { usedCount: { increment: 1 } },
+        data: {
+          usedCount: { increment: 1 },
+          usedBy: session.user.email,
+          usedAt: new Date(),
+          ...(promoCode.maxUses === 1 ? { active: false } : {}),
+        },
       }),
     ]);
 
+    const tierLabel = tierName ? ` — aktywowano plan ${tierName}` : "";
     return NextResponse.json({
       success: true,
       credits: user.credits,
-      added: promoCode.credits,
+      added: creditsToAdd,
+      tier: user.tier,
+      message: `✅ Dodano ${creditsToAdd} kredytów${tierLabel}!`,
     });
   } catch (error) {
     console.error("Promo code error:", error);
