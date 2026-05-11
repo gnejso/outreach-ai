@@ -7,6 +7,66 @@ export const maxDuration = 60;
 
 const AUDIT_COST = 25;
 
+// Fetch a page and return clean text (strip scripts/styles/tags)
+async function fetchPageText(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return "";
+    const html = await res.text();
+    // Remove scripts, styles, SVG, comments
+    const clean = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s{3,}/g, "\n")
+      .trim();
+    return clean.slice(0, 6000);
+  } catch {
+    return "";
+  }
+}
+
+// Extract internal links from homepage HTML
+function extractSubpageLinks(html: string, baseUrl: string): string[] {
+  const base = new URL(baseUrl);
+  const matches = html.matchAll(/href=["']([^"'#?]+)["']/gi);
+  const links = new Set<string>();
+
+  for (const m of matches) {
+    try {
+      const href = m[1];
+      if (href.startsWith("http")) {
+        const u = new URL(href);
+        if (u.hostname === base.hostname && u.pathname !== "/" && u.pathname !== "") {
+          links.add(u.origin + u.pathname);
+        }
+      } else if (href.startsWith("/") && href.length > 1) {
+        links.add(base.origin + href);
+      }
+    } catch {
+      // ignore invalid
+    }
+  }
+
+  // Prioritize: /kontakt, /o-nas, /uslugi, /oferta, /cennik, /about, /contact, /services, /pricing
+  const priority = [
+    "kontakt", "contact", "o-nas", "about", "uslugi", "services",
+    "oferta", "offer", "cennik", "pricing", "portfolio", "realizacje",
+  ];
+  const sorted = [...links].sort((a, b) => {
+    const aScore = priority.findIndex((p) => a.toLowerCase().includes(p));
+    const bScore = priority.findIndex((p) => b.toLowerCase().includes(p));
+    return (aScore === -1 ? 99 : aScore) - (bScore === -1 ? 99 : bScore);
+  });
+
+  return sorted.slice(0, 4); // max 4 subpages
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,33 +87,75 @@ export async function POST(req: NextRequest) {
   let cleanUrl = url.trim();
   if (!cleanUrl.startsWith("http")) cleanUrl = "https://" + cleanUrl;
 
-  const prompt = `Odwiedź tę stronę internetową: ${cleanUrl}
+  // 1. Fetch homepage HTML (raw, for link extraction)
+  let homepageHtml = "";
+  try {
+    const res = await fetch(cleanUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) homepageHtml = await res.text();
+  } catch {
+    // proceed without
+  }
+
+  const homepageText = homepageHtml
+    ? homepageHtml
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s{3,}/g, "\n")
+        .trim()
+        .slice(0, 6000)
+    : "";
+
+  // 2. Find subpage links and fetch them in parallel
+  const subpageUrls = homepageHtml ? extractSubpageLinks(homepageHtml, cleanUrl) : [];
+  const subpageTexts = await Promise.all(subpageUrls.map((u) => fetchPageText(u)));
+
+  // 3. Build context string
+  let pagesContext = `=== STRONA GŁÓWNA (${cleanUrl}) ===\n${homepageText || "(nie udało się pobrać)"}\n\n`;
+  subpageUrls.forEach((u, i) => {
+    if (subpageTexts[i]) {
+      pagesContext += `=== PODSTRONA: ${u} ===\n${subpageTexts[i]}\n\n`;
+    }
+  });
+
+  const pagesScanned = 1 + subpageUrls.filter((_, i) => !!subpageTexts[i]).length;
+
+  const prompt = `Masz do przeanalizowania treść ${pagesScanned} strony/stron serwisu: ${cleanUrl}
 ${industry ? `Branża klienta: ${industry}` : ""}
-Przeanalizuj stronę dokładnie i napisz szczegółowy raport w języku polskim.
+
+POBRANE TREŚCI STRON:
+${pagesContext}
+
+Na podstawie POWYŻSZYCH TREŚCI (nie wymyślaj — bazuj tylko na tym co jest w tekście) napisz szczegółowy raport audytu. Pisz po polsku.
 
 Struktura raportu (użyj dokładnie tych nagłówków):
 
 OCENA OGÓLNA
 Ocena: X/10
-[2-3 zdania podsumowania]
+[2-3 zdania podsumowania — konkretne obserwacje z treści]
 
 ✅ CO DZIAŁA DOBRZE
-[5-7 konkretnych obserwacji z przykładami]
+[5-7 konkretnych pozytywów widocznych w treści]
 
 ❌ KRYTYCZNE PROBLEMY
 [5-7 konkretnych problemów które szkodzą konwersji lub UX]
 
 📱 MOBILE & SZYBKOŚĆ
-[Analiza przyjazności mobilnej i wskaźników szybkości ładowania]
+[Wnioski na podstawie struktury strony]
 
 🎯 CTA I KONWERSJA
-[Czy są wyraźne wezwania do działania? Widoczny numer telefonu? Formularz kontaktowy? Lead capture?]
+[Czy są numery telefonów? Formularze? Przyciski kontaktowe? Konkretne przykłady z treści]
 
 🔍 SEO PODSTAWY
-[Title tags, meta descriptions, struktura nagłówków, sygnały lokalnego SEO]
+[Title, nagłówki H1/H2, słowa kluczowe widoczne w treści]
 
 💡 TOP 5 POPRAWEK
-[Lista 5 najważniejszych poprawek według priorytetu]
+[5 najważniejszych zmian — od najważniejszej]
 
 📊 PODSUMOWANIE OCEN
 Design: X/10
@@ -66,22 +168,26 @@ Treść: X/10`;
   try {
     report = await invokeBedrock({
       messages: [{ role: "user", content: prompt }],
-      maxTokens: 2000,
-      system: "Jesteś ekspertem od audytów stron internetowych, UX i konwersji. Analizujesz strony pod kątem sprzedaży i generowania leadów.",
+      maxTokens: 2500,
+      system: "Jesteś ekspertem od audytów stron internetowych, UX i konwersji. Analizujesz wyłącznie to co faktycznie jest w dostarczonych treściach stron — nie wymyślasz ani nie zgadujesz.",
     });
   } catch (err) {
     console.error("[audyt] Bedrock error:", err);
     return NextResponse.json({ error: "Błąd generowania audytu" }, { status: 500 });
   }
 
-  // Extract score from report
   const scoreMatch = report.match(/OCENA OGÓLNA[\s\S]*?Ocena:\s*(\d+)/i);
   const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
 
-  // Save audit and deduct credits in transaction
   const [audit] = await prisma.$transaction([
     prisma.webAudit.create({
-      data: { userId: user.id, url: cleanUrl, industry: industry || null, report, score },
+      data: {
+        userId: user.id,
+        url: cleanUrl,
+        industry: industry || null,
+        report: `Przeskanowano ${pagesScanned} stron (${[cleanUrl, ...subpageUrls].join(", ")})\n\n${report}`,
+        score,
+      },
     }),
     ...(user.role !== "ADMIN" ? [
       prisma.user.update({
@@ -92,14 +198,14 @@ Treść: X/10`;
         data: {
           userId: user.id,
           type: "WEB_AUDIT",
-          description: `Audyt strony: ${cleanUrl}`,
+          description: `Audyt strony: ${cleanUrl} (${pagesScanned} stron)`,
           creditsUsed: AUDIT_COST,
         },
       }),
     ] : []),
   ]);
 
-  return NextResponse.json({ report, score, auditId: audit.id });
+  return NextResponse.json({ report: audit.report, score, auditId: audit.id, pagesScanned });
 }
 
 export async function GET(req: NextRequest) {
