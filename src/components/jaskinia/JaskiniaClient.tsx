@@ -289,7 +289,7 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
                 {/* Business description */}
                 {b.description && (
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
-                    {b.description.split(". ").slice(0, 2).join(". ").slice(0, 120)}{b.description.length > 120 ? "…" : ""}
+                    {b.description.length > 140 ? b.description.slice(0, 140) + "…" : b.description}
                   </p>
                 )}
 
