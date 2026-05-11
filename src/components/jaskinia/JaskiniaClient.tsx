@@ -93,7 +93,7 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
 
   async function unlock(b: Business) {
     if (isGuest) {
-      nextRouter.push("/pl/login");
+      window.location.href = "/pl/login";
       return;
     }
     if (isUnlocked(b) || !isFree) {
