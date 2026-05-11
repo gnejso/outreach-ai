@@ -1,21 +1,33 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export default auth((req: NextRequest & { auth: unknown }) => {
+const DASHBOARD_PATHS = [
+  "dashboard", "cold-call", "sms", "scraper", "reminders",
+  "jaskinia", "shadow-boxing", "oferta", "history", "profile", "billing", "audyt",
+];
+
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Check if it's a dashboard route (any locale)
-  const isDashboard = /^\/[a-z]{2}\/(dashboard|cold-call|sms|scraper|reminders|jaskinia|shadow-boxing|oferta|history|profile|billing|audyt)/.test(pathname);
+  // Match /<locale>/<dashboard-path>
+  const parts = pathname.split("/");
+  const locale = parts[1] || "pl";
+  const section = parts[2];
 
-  if (isDashboard && !(req as unknown as { auth: { user?: unknown } }).auth?.user) {
-    const locale = pathname.split("/")[1] || "pl";
-    const loginUrl = new URL(`/${locale}/login`, req.url);
-    return NextResponse.redirect(loginUrl);
+  if (DASHBOARD_PATHS.includes(section)) {
+    // Check for NextAuth session cookie
+    const sessionToken =
+      req.cookies.get("__Secure-next-auth.session-token")?.value ||
+      req.cookies.get("next-auth.session-token")?.value;
+
+    if (!sessionToken) {
+      const loginUrl = new URL(`/${locale}/login`, req.url);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
