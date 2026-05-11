@@ -254,13 +254,31 @@ export default function LoginPage() {
                 </button>
               </form>
 
+              {/* Guest mode */}
+              <div style={{ marginTop: 16, textAlign: "center" }}>
+                <button
+                  onClick={() => router.push(`/${locale}/dashboard`)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-muted)",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    fontFamily: "'IBM Plex Sans', sans-serif",
+                  }}
+                >
+                  Przeglądaj bez logowania →
+                </button>
+              </div>
+
               {/* Terms */}
               <p
                 style={{
                   color: "var(--text-muted)",
                   fontSize: 12,
                   textAlign: "center",
-                  marginTop: 20,
+                  marginTop: 12,
                   lineHeight: 1.6,
                 }}
               >
