@@ -93,7 +93,7 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
 
   async function unlock(b: Business) {
     if (isGuest) {
-      alert("Zaloguj się aby odblokować strategię");
+      nextRouter.push("/pl/login");
       return;
     }
     if (isUnlocked(b) || !isFree) {
@@ -286,10 +286,10 @@ export function JaskiniaClient({ businesses, userCredits, isAdmin, userEmail, us
                   </span>
                 </div>
 
-                {/* First strategy title always visible */}
-                {b.strategies[0] && (
+                {/* Business description */}
+                {b.description && (
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
-                    <strong>1.</strong> {b.strategies[0].title}
+                    {b.description.split(". ").slice(0, 2).join(". ").slice(0, 120)}{b.description.length > 120 ? "…" : ""}
                   </p>
                 )}
 

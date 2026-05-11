@@ -18,7 +18,7 @@ export default function LoginPage() {
   // In mock mode, skip login entirely and go straight to dashboard
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_DEV_MOCK_AUTH === "true") {
-      router.replace(`/${locale}/dashboard`);
+      router.replace(`/${locale}/jaskinia`);
     }
   }, [locale, router]);
 
@@ -257,7 +257,7 @@ export default function LoginPage() {
               {/* Guest mode */}
               <div style={{ marginTop: 16, textAlign: "center" }}>
                 <button
-                  onClick={() => router.push(`/${locale}/dashboard`)}
+                  onClick={() => router.push(`/${locale}/jaskinia`)}
                   style={{
                     background: "none",
                     border: "none",
