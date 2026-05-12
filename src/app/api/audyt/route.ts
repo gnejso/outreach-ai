@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { invokeBedrock } from "@/lib/bedrock";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const AUDIT_COST = 25;
 
@@ -40,15 +40,19 @@ function extractHeadings(html: string, tag: "h1" | "h2"): string[] {
 
 function extractPhones(html: string): string[] {
   const phones = new Set<string>();
-  // tel: links
+  // 1. tel: href links — always reliable
   for (const m of html.matchAll(/href=["']tel:([^"']+)["']/gi)) {
     phones.add(m[1].trim());
   }
-  // plain phone patterns in text
-  const textOnly = html.replace(/<[^>]+>/g, " ");
-  for (const m of textOnly.matchAll(/(?<!\w)(\+?48[\s\-]?)?(\d{3}[\s\-]?\d{3}[\s\-]?\d{3}|\d{2}[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2})(?!\w)/g)) {
-    const p = m[0].replace(/\s+/g, " ").trim();
-    if (p.replace(/\D/g, "").length >= 9) phones.add(p);
+  // 2. Strip scripts/styles first, then look for formatted phone patterns only
+  const stripped = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ");
+  // Only match properly formatted Polish numbers (with spaces or dashes between groups)
+  for (const m of stripped.matchAll(/(\+48[\s\-]?)?(\d{3}[\s\-]\d{3}[\s\-]\d{3}|\d{2}[\s\-]\d{3}[\s\-]\d{2}[\s\-]\d{2})/g)) {
+    const p = m[0].trim();
+    phones.add(p);
   }
   return [...phones].slice(0, 8);
 }
@@ -93,7 +97,7 @@ async function fetchPage(url: string): Promise<PageData | null> {
       h2: extractHeadings(html, "h2"),
       phones: extractPhones(html),
       emails: extractEmails(html),
-      text: htmlToText(html, 8000),
+      text: htmlToText(html, 20000),
     };
   } catch {
     return null;
