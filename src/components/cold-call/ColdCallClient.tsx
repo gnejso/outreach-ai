@@ -187,45 +187,52 @@ export function ColdCallClient({ userEmail }: Props) {
     }
   }, [sessionId]);
 
-  function handlePrev() {
-    if (currentIdx > 0) setCurrentIdx(currentIdx - 1);
-  }
-
-  function handleNext() {
-    if (currentIdx < businesses.length - 1) setCurrentIdx(currentIdx + 1);
-  }
-
-  async function handleSaveCrm() {
-    const draft = crmDrafts[currentIdx];
-    if (!draft || !sessionId) return;
-
+  async function saveCrm(idx: number, overrideStatus?: string) {
+    if (!sessionId || idx >= businesses.length) return;
+    const draft = crmDrafts[idx];
+    const status = overrideStatus ?? draft?.status ?? "NEW";
     try {
       const res = await fetch("/api/business-notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
-          businessName: businesses[currentIdx].name,
-          businessIndex: currentIdx,
-          status: draft.status,
-          note: draft.note || "",
-          followUpDate: draft.followUpDate || null,
+          businessName: businesses[idx].name,
+          businessIndex: idx,
+          status,
+          note: draft?.note || "",
+          followUpDate: draft?.followUpDate || null,
         }),
       });
       if (handleUnauthorized(res, router)) return;
+      if (res.ok) setSavedIdx(prev => new Set(prev).add(idx));
+    } catch { /* silent */ }
+  }
 
-      if (res.ok) {
-        setSavedIdx(prev => new Set(prev).add(currentIdx));
-        console.log("[ColdCall] CRM saved successfully");
-      } else {
-        const error = await res.json();
-        console.error("[ColdCall] Failed to save CRM:", error);
-        alert("Błąd zapisywania do CRM");
-      }
-    } catch (err) {
-      console.error("[ColdCall] Error saving CRM:", err);
-      alert("Błąd zapisywania do CRM");
+  function handlePrev() {
+    if (currentIdx > 0) {
+      // Auto-save current as NEW if not saved yet (tracks that it was viewed)
+      if (!savedIdx.has(currentIdx)) saveCrm(currentIdx);
+      setCurrentIdx(currentIdx - 1);
     }
+  }
+
+  function handleNext() {
+    if (currentIdx < businesses.length - 1) {
+      if (!savedIdx.has(currentIdx)) saveCrm(currentIdx);
+      setCurrentIdx(currentIdx + 1);
+    }
+  }
+
+  function handleStatusChange(idx: number, status: string) {
+    const updated = { ...crmDrafts, [idx]: { ...crmDrafts[idx], status } as CrmDraft };
+    setCrmDrafts(updated);
+    // Auto-save immediately on status change
+    saveCrm(idx, status);
+  }
+
+  async function handleSaveCrm() {
+    await saveCrm(currentIdx);
   }
 
   function copySection(section: string, text: string) {
@@ -553,7 +560,7 @@ export function ColdCallClient({ userEmail }: Props) {
               <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>{t("status")}</label>
               <select
                 value={crmDrafts[currentIdx]?.status || "NEW"}
-                onChange={e => setCrmDrafts({ ...crmDrafts, [currentIdx]: { ...crmDrafts[currentIdx], status: e.target.value } as CrmDraft })}
+                onChange={e => handleStatusChange(currentIdx, e.target.value)}
                 style={{
                   width: "100%",
                   padding: 10,
