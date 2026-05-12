@@ -125,7 +125,66 @@ function extractEmbeddedJson(html: string): string {
   return chunks.map(flattenJson).join("\n\n");
 }
 
-async function fetchPage(url: string): Promise<PageData | null> {
+// Extract human-readable strings from a JS bundle (Vite/webpack/etc.)
+// Pulls quoted strings that look like UI text (Polish/English words, sentences)
+function extractTextFromJsBundle(js: string): string {
+  const seen = new Set<string>();
+  const results: string[] = [];
+
+  // Match all quoted strings (single, double, template)
+  for (const m of js.matchAll(/["'`]((?:[^"'`\\]|\\.){8,300})["'`]/g)) {
+    const s = m[1]
+      .replace(/\\n/g, " ").replace(/\\t/g, " ").replace(/\\"/g, '"')
+      .replace(/\\'/g, "'").trim();
+
+    // Skip: paths/imports, CSS classes, hex colors, URLs, code-like strings
+    if (/^\/|^https?:|^#[0-9a-f]{3,8}$|^\.|^--/i.test(s)) continue;
+    if (/[{}[\]()=>]|function|import|export|require|const |let |var |return /i.test(s)) continue;
+    if (/^[a-z0-9_-]+\.[a-z]{2,4}$/i.test(s)) continue; // filename
+    if (/^[a-z_-]+:[a-z_-]+$/i.test(s)) continue; // key:value identifiers
+    if (s.split(" ").length < 2 && s.length < 20) continue; // single word too short
+
+    if (!seen.has(s)) {
+      seen.add(s);
+      results.push(s);
+    }
+  }
+
+  return results.join("\n");
+}
+
+// Fetch the main JS bundle for a Vite/CRA/webpack SPA and extract its text content
+async function fetchJsBundleText(html: string, baseUrl: string): Promise<string> {
+  const base = new URL(baseUrl);
+  const scriptUrls: string[] = [];
+
+  for (const m of html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)) {
+    try {
+      const src = m[1].startsWith("http") ? m[1] : base.origin + m[1];
+      const u = new URL(src);
+      if (u.hostname === base.hostname && /\.(js)(\?|$)/.test(u.pathname)) {
+        scriptUrls.push(src);
+      }
+    } catch { /* ignore */ }
+  }
+
+  if (!scriptUrls.length) return "";
+
+  // Fetch all same-origin JS files in parallel
+  const texts = await Promise.all(scriptUrls.map(async (src) => {
+    try {
+      const r = await fetch(src, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
+        signal: AbortSignal.timeout(10000),
+      });
+      return r.ok ? await r.text() : "";
+    } catch { return ""; }
+  }));
+
+  return texts.map(extractTextFromJsBundle).filter(Boolean).join("\n");
+}
+
+async function fetchPage(url: string, jsBundleText?: string): Promise<PageData | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
@@ -135,11 +194,13 @@ async function fetchPage(url: string): Promise<PageData | null> {
     const html = await res.text();
     const { title, metaDesc } = extractMeta(html);
 
-    // For JS-rendered SPAs, most visible text is missing from raw HTML.
-    // Supplement with data embedded in __NEXT_DATA__, JSON-LD, and script tags.
     const embeddedText = extractEmbeddedJson(html);
     const visibleText = htmlToText(html, 20000);
-    const fullText = [visibleText, embeddedText].filter(Boolean).join("\n\n--- DANE Z JS ---\n\n");
+
+    // Combine visible HTML text + embedded JSON + JS bundle content (passed in for homepage,
+    // or fetched fresh for subpages if bundle URLs differ)
+    const parts = [visibleText, embeddedText, jsBundleText ?? ""].filter(Boolean);
+    const fullText = parts.join("\n\n");
 
     return {
       url,
@@ -269,9 +330,8 @@ export async function POST(req: NextRequest) {
   let cleanUrl = url.trim().replace(/\/$/, "");
   if (!cleanUrl.startsWith("http")) cleanUrl = "https://" + cleanUrl;
 
-  // 1. Fetch homepage
+  // 1. Fetch homepage HTML
   let homepageHtml = "";
-  const homepagePage = await fetchPage(cleanUrl);
   try {
     const res = await fetch(cleanUrl, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
@@ -280,9 +340,15 @@ export async function POST(req: NextRequest) {
     if (res.ok) homepageHtml = await res.text();
   } catch { /* proceed without */ }
 
-  // 2. Find subpages: links in HTML + probe common slugs (handles SPAs)
+  // 2. Fetch JS bundle once — contains all SPA page content (Vite/webpack/CRA)
+  const jsBundleText = homepageHtml ? await fetchJsBundleText(homepageHtml, cleanUrl) : "";
+
+  // 3. Parse homepage + find all subpage URLs
+  const homepagePage = await fetchPage(cleanUrl, jsBundleText);
   const subpageUrls = await getSubpageUrls(homepageHtml, cleanUrl);
-  const subpageResults = await Promise.all(subpageUrls.map((u) => fetchPage(u)));
+
+  // 4. Fetch all subpages in parallel, reusing JS bundle text
+  const subpageResults = await Promise.all(subpageUrls.map((u) => fetchPage(u, jsBundleText)));
   const subpages = subpageResults.filter((p): p is PageData => p !== null);
 
   // 3. Build context
