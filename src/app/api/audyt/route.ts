@@ -350,39 +350,61 @@ export async function POST(req: NextRequest) {
     if (res.ok) homepageHtml = await res.text();
   } catch { /* proceed without */ }
 
-  // 2. Fetch JS bundle once — contains all SPA page content (Vite/webpack/CRA)
-  const jsBundleText = homepageHtml ? await fetchJsBundleText(homepageHtml, cleanUrl) : "";
+  // 2. Detect if this is a JS-rendered SPA (Vite/CRA/webpack)
+  // SPAs serve the same HTML shell for every URL — visible text in raw HTML is near zero
+  const visibleHtmlText = htmlToText(homepageHtml, 99999);
+  const isSpa = homepageHtml.length > 5000 && visibleHtmlText.length < 500;
 
-  // 3. Parse homepage + find all subpage URLs
-  const homepagePage = await fetchPage(cleanUrl, jsBundleText);
-  const subpageUrls = await getSubpageUrls(homepageHtml, cleanUrl);
+  let allPages: string[];
+  let allUrls: string[];
+  let pagesScanned: number;
 
-  // 4. Fetch all subpages in parallel, reusing JS bundle text
-  const subpageResults = await Promise.all(subpageUrls.map((u) => fetchPage(u, jsBundleText)));
-  const subpages = subpageResults.filter((p): p is PageData => p !== null);
+  if (isSpa) {
+    // For SPAs: fetch all JS bundles once — they contain the full app content
+    const jsBundleText = await fetchJsBundleText(homepageHtml, cleanUrl);
+    const subpageUrls = await getSubpageUrls(homepageHtml, cleanUrl);
+    const { title, metaDesc } = extractMeta(homepageHtml);
+    const phones = extractPhones(homepageHtml);
+    const emails = extractEmails(homepageHtml);
 
-  // 3. Build context
-  const allPages = [
-    ...(homepagePage ? [pageToContext(homepagePage, "STRONA GŁÓWNA")] : [`=== STRONA GŁÓWNA: ${cleanUrl} ===\n(nie udało się pobrać)`]),
-    ...subpages.map((p) => pageToContext(p, "PODSTRONA")),
-  ];
+    // Build single context block: meta + all discovered URLs + full JS bundle content
+    allUrls = [cleanUrl, ...subpageUrls];
+    pagesScanned = allUrls.length;
+    allPages = [
+      `=== STRONA (SPA — cała treść z JS bundle) ===`,
+      title ? `Title: ${title}` : "",
+      metaDesc ? `Meta description: ${metaDesc}` : "",
+      phones.length ? `📞 Telefony: ${phones.join(", ")}` : "",
+      emails.length ? `📧 Emaile: ${emails.join(", ")}` : "",
+      `Podstrony znalezione: ${allUrls.join(", ")}`,
+      "",
+      `=== TREŚĆ APLIKACJI (wyekstrahowana z JS bundle) ===`,
+      jsBundleText || "(brak treści w bundle)",
+    ].filter(Boolean);
 
-  const pagesScanned = (homepagePage ? 1 : 0) + subpages.length;
-  const allUrls = [cleanUrl, ...subpages.map((p) => p.url)];
+  } else {
+    // Standard multi-page site: fetch each page separately
+    const jsBundleText = await fetchJsBundleText(homepageHtml, cleanUrl);
+    const homepagePage = await fetchPage(cleanUrl, jsBundleText);
+    const subpageUrls = await getSubpageUrls(homepageHtml, cleanUrl);
+    const subpageResults = await Promise.all(subpageUrls.map((u) => fetchPage(u, jsBundleText)));
+    const subpages = subpageResults.filter((p): p is PageData => p !== null);
 
-  // Collect all phones/emails across all pages for summary
-  const allPhones = [...new Set([
-    ...(homepagePage?.phones ?? []),
-    ...subpages.flatMap((p) => p.phones),
-  ])];
-  const allEmails = [...new Set([
-    ...(homepagePage?.emails ?? []),
-    ...subpages.flatMap((p) => p.emails),
-  ])];
+    allPages = [
+      ...(homepagePage ? [pageToContext(homepagePage, "STRONA GŁÓWNA")] : [`=== STRONA GŁÓWNA: ${cleanUrl} ===\n(nie udało się pobrać)`]),
+      ...subpages.map((p) => pageToContext(p, "PODSTRONA")),
+    ];
+    pagesScanned = (homepagePage ? 1 : 0) + subpages.length;
+    allUrls = [cleanUrl, ...subpages.map((p) => p.url)];
+  }
+
+  // Collect phones/emails from homepage HTML (works for both SPA and static)
+  const homepagePhones = extractPhones(homepageHtml);
+  const homepageEmails = extractEmails(homepageHtml);
 
   const contactSummary = [
-    allPhones.length ? `Znalezione numery telefonu: ${allPhones.join(", ")}` : "Brak numerów telefonu na żadnej stronie.",
-    allEmails.length ? `Znalezione emaile: ${allEmails.join(", ")}` : "Brak adresów email.",
+    homepagePhones.length ? `Znalezione numery telefonu: ${homepagePhones.join(", ")}` : "Brak numerów telefonu.",
+    homepageEmails.length ? `Znalezione emaile: ${homepageEmails.join(", ")}` : "Brak adresów email.",
   ].join("\n");
 
   const prompt = `Analizujesz serwis: ${cleanUrl}
