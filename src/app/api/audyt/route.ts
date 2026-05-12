@@ -104,43 +104,10 @@ async function fetchPage(url: string): Promise<PageData | null> {
   }
 }
 
-// Common subpage slugs to always try, even on JS-rendered SPAs
-const COMMON_SLUGS = [
-  "kontakt", "contact",
-  "o-nas", "o-mnie", "about", "about-us",
-  "uslugi", "usługi", "services",
-  "oferta", "offer",
-  "cennik", "pricing", "ceny",
-  "portfolio", "realizacje", "projekty",
-  "zespol", "zespół", "team",
-];
-
-async function probeSubpages(baseUrl: string): Promise<string[]> {
-  const base = new URL(baseUrl);
-  const candidates = COMMON_SLUGS.map((s) => `${base.origin}/${s}`);
-  const results = await Promise.all(
-    candidates.map(async (url) => {
-      try {
-        const res = await fetch(url, {
-          method: "HEAD",
-          headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
-          signal: AbortSignal.timeout(5000),
-          redirect: "follow",
-        });
-        // Accept 200 only — 404 means page doesn't exist
-        return res.ok ? url : null;
-      } catch {
-        return null;
-      }
-    })
-  );
-  return results.filter((u): u is string => u !== null);
-}
-
-function extractLinksFromHtml(html: string, baseUrl: string): string[] {
+// Extract all internal links from raw HTML (href attributes)
+function extractLinksFromHtml(html: string, baseUrl: string): Set<string> {
   const base = new URL(baseUrl);
   const links = new Set<string>();
-
   for (const m of html.matchAll(/href=["']([^"'#?]+)["']/gi)) {
     try {
       const href = m[1];
@@ -153,38 +120,69 @@ function extractLinksFromHtml(html: string, baseUrl: string): string[] {
         full = base.origin + href;
       } else continue;
       if (/\.(pdf|jpg|jpeg|png|gif|svg|webp|css|js|xml|json|ico)$/i.test(full)) continue;
-      if (full === baseUrl || full === base.origin + "/") continue;
-      links.add(full.replace(/\/$/, ""));
+      const norm = full.replace(/\/$/, "");
+      if (norm === base.origin || norm === baseUrl.replace(/\/$/, "")) continue;
+      links.add(norm);
     } catch { /* ignore */ }
   }
-  return [...links];
+  return links;
+}
+
+// Fetch inline JS bundles from homepage and extract internal path strings
+async function extractLinksFromJs(html: string, baseUrl: string): Promise<Set<string>> {
+  const base = new URL(baseUrl);
+  const links = new Set<string>();
+
+  // Find all <script src="..."> pointing to same origin
+  const scriptUrls: string[] = [];
+  for (const m of html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)) {
+    try {
+      const src = m[1].startsWith("http") ? m[1] : base.origin + m[1];
+      if (new URL(src).hostname === base.hostname) scriptUrls.push(src);
+    } catch { /* ignore */ }
+  }
+
+  // Fetch up to 3 largest JS bundles (likely contain router paths)
+  const toFetch = scriptUrls.slice(0, 3);
+  const jsTexts = await Promise.all(toFetch.map(async (url) => {
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
+        signal: AbortSignal.timeout(8000),
+      });
+      return res.ok ? await res.text() : "";
+    } catch { return ""; }
+  }));
+
+  // Look for route path strings like "/kontakt", "/o-nas", "/uslugi" etc.
+  for (const js of jsTexts) {
+    for (const m of js.matchAll(/["'`](\/[a-zA-Z0-9\-_/]{2,60})["'`]/g)) {
+      const path = m[1];
+      // Must look like a real page path, not an asset or variable
+      if (/\.(js|css|png|svg|json|woff|ico)/.test(path)) continue;
+      if (/^\/(_next|api|static|assets|images|fonts|public)/.test(path)) continue;
+      if ((path.match(/\//g) || []).length > 4) continue; // too deep
+      links.add(base.origin + path);
+    }
+  }
+
+  return links;
 }
 
 async function getSubpageUrls(html: string, baseUrl: string): Promise<string[]> {
-  // Try both: links found in HTML + probing common slugs in parallel
-  const [fromHtml, fromProbe] = await Promise.all([
+  const [fromHtml, fromJs] = await Promise.all([
     Promise.resolve(extractLinksFromHtml(html, baseUrl)),
-    probeSubpages(baseUrl),
+    extractLinksFromJs(html, baseUrl),
   ]);
 
-  const combined = new Set([...fromHtml, ...fromProbe]);
+  const combined = new Set([...fromHtml, ...fromJs]);
 
-  const priority = [
-    "kontakt", "contact",
-    "o-nas", "o-mnie", "about",
-    "uslugi", "usługi", "services", "oferta",
-    "cennik", "pricing", "ceny",
-    "portfolio", "realizacje",
-    "zespol", "team",
-  ];
-
+  // Sort: shorter paths first (top-level pages before deep ones), dedupe
   return [...combined].sort((a, b) => {
-    const aLow = a.toLowerCase();
-    const bLow = b.toLowerCase();
-    const aScore = priority.findIndex((p) => aLow.includes(p));
-    const bScore = priority.findIndex((p) => bLow.includes(p));
-    return (aScore === -1 ? 99 : aScore) - (bScore === -1 ? 99 : bScore);
-  }).slice(0, 8);
+    const aDepth = (a.match(/\//g) || []).length;
+    const bDepth = (b.match(/\//g) || []).length;
+    return aDepth - bDepth;
+  }).slice(0, 12);
 }
 
 function pageToContext(p: PageData, label: string): string {
