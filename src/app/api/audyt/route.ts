@@ -40,20 +40,26 @@ function extractHeadings(html: string, tag: "h1" | "h2"): string[] {
 
 function extractPhones(html: string): string[] {
   const phones = new Set<string>();
-  // 1. tel: href links — always reliable
+
+  // 1. tel: href links — most reliable
   for (const m of html.matchAll(/href=["']tel:([^"']+)["']/gi)) {
     phones.add(m[1].trim());
   }
-  // 2. Strip scripts/styles first, then look for formatted phone patterns only
+
+  // 2. JSON-LD / schema.org "telephone" field
+  for (const m of html.matchAll(/"telephone"\s*:\s*"([^"]+)"/gi)) {
+    phones.add(m[1].trim());
+  }
+
+  // 3. Formatted numbers in visible text (strip scripts/styles first)
   const stripped = html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<[^>]+>/g, " ");
-  // Only match properly formatted Polish numbers (with spaces or dashes between groups)
   for (const m of stripped.matchAll(/(\+48[\s\-]?)?(\d{3}[\s\-]\d{3}[\s\-]\d{3}|\d{2}[\s\-]\d{3}[\s\-]\d{2}[\s\-]\d{2})/g)) {
-    const p = m[0].trim();
-    phones.add(p);
+    phones.add(m[0].trim());
   }
+
   return [...phones].slice(0, 8);
 }
 
@@ -143,6 +149,10 @@ function extractTextFromJsBundle(js: string): string {
     if (/^[a-z0-9_-]+\.[a-z]{2,4}$/i.test(s)) continue; // filename
     if (/^[a-z_-]+:[a-z_-]+$/i.test(s)) continue; // key:value identifiers
     if (s.split(" ").length < 2 && s.length < 20) continue; // single word too short
+    // Skip React/framework internals
+    if (/react|React|minified|invariant|transitional|hydrat|fiber|dispatcher|useState|useEffect|createElement|Component|__webpack|__vite/i.test(s)) continue;
+    // Skip stack traces and source map paths
+    if (/\.tsx?:|\.jsx?:|at [A-Z]|\(webpack\)|\(vite\)/.test(s)) continue;
 
     if (!seen.has(s)) {
       seen.add(s);
@@ -379,13 +389,15 @@ export async function POST(req: NextRequest) {
 ${industry ? `Branża: ${industry}` : ""}
 Przeskanowano ${pagesScanned} stron: ${allUrls.join(", ")}
 
-DANE KONTAKTOWE (wyekstrahowane z HTML):
+WYEKSTRAHOWANE DANE KONTAKTOWE:
 ${contactSummary}
+
+UWAGA: Dane treści stron mogą zawierać fragmenty kodu JS/React — ignoruj wszelkie komunikaty techniczne (np. "Minified React error", "The argument must be a React element", nazwy plików .tsx/.jsx, stacktrace). Analizuj WYŁĄCZNIE treści widoczne dla użytkownika — teksty, nagłówki, opisy, dane kontaktowe, CTA.
 
 TREŚCI STRON:
 ${allPages.join("\n\n")}
 
-Na podstawie POWYŻSZYCH TREŚCI napisz szczegółowy raport audytu po polsku. Bazuj WYŁĄCZNIE na dostarczonych danych — jeśli coś jest, napisz to wprost (np. podaj znaleziony numer telefonu). Jeśli czegoś nie ma, napisz że nie znaleziono.
+Napisz szczegółowy raport audytu po polsku. Bazuj WYŁĄCZNIE na rzeczywistej treści widocznej dla odwiedzającego. NIE wspominaj o błędach React ani kodzie technicznym — to artefakty scrapowania, nie błędy strony. Jeśli numer telefonu jest w danych kontaktowych powyżej — oznacza to że jest na stronie i go podaj.
 
 Struktura raportu (użyj dokładnie tych nagłówków):
 
@@ -394,19 +406,19 @@ Ocena: X/10
 [2-3 zdania podsumowania — konkretne obserwacje]
 
 ✅ CO DZIAŁA DOBRZE
-[5-7 konkretnych pozytywów z treści]
+[5-7 konkretnych pozytywów]
 
 ❌ KRYTYCZNE PROBLEMY
-[5-7 konkretnych problemów szkodzących konwersji lub UX]
+[5-7 konkretnych problemów szkodzących konwersji lub UX — tylko realne problemy dla użytkownika, nie artefakty kodu]
 
 📱 MOBILE & SZYBKOŚĆ
-[Wnioski na podstawie struktury HTML]
+[Wnioski na podstawie struktury strony]
 
 🎯 CTA I KONWERSJA
-[Podaj konkretne numery telefonów/emaile jeśli znaleziono. Opisz formularze i przyciski CTA widoczne w treści.]
+[Podaj znalezione numery telefonów i emaile. Opisz formularze i przyciski CTA.]
 
 🔍 SEO PODSTAWY
-[Title tagu, nagłówki H1/H2, meta description — podaj konkretne wartości z treści]
+[Title, H1/H2, meta description — konkretne wartości]
 
 💡 TOP 5 POPRAWEK
 [5 najważniejszych zmian — od najważniejszej]
@@ -423,7 +435,7 @@ Treść: X/10`;
     report = await invokeBedrock({
       messages: [{ role: "user", content: prompt }],
       maxTokens: 3500,
-      system: "Jesteś ekspertem od audytów stron internetowych, UX i konwersji. Analizujesz wyłącznie dostarczone dane. Jeśli w danych są numery telefonów lub emaile — wymieniaj je wprost. Nigdy nie twierdzisz że czegoś nie ma jeśli jest w dostarczonych danych.",
+      system: "Jesteś ekspertem od audytów stron internetowych, UX i konwersji. Analizujesz treści widoczne dla użytkownika. Ignorujesz całkowicie fragmenty kodu JavaScript, React, błędy frameworka, nazwy plików — to artefakty scrapowania SPA. Jeśli dane kontaktowe zawierają telefon lub email — podajesz je jako obecne na stronie.",
     });
   } catch (err) {
     console.error("[audyt] Bedrock error:", err);
