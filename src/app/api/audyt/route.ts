@@ -142,8 +142,8 @@ async function extractLinksFromJs(html: string, baseUrl: string): Promise<Set<st
     } catch { /* ignore */ }
   }
 
-  // Fetch up to 3 largest JS bundles (likely contain router paths)
-  const toFetch = scriptUrls.slice(0, 3);
+  // Fetch all JS bundles from the page
+  const toFetch = scriptUrls;
   const jsTexts = await Promise.all(toFetch.map(async (url) => {
     try {
       const res = await fetch(url, {
@@ -177,12 +177,12 @@ async function getSubpageUrls(html: string, baseUrl: string): Promise<string[]> 
 
   const combined = new Set([...fromHtml, ...fromJs]);
 
-  // Sort: shorter paths first (top-level pages before deep ones), dedupe
+  // Sort: shorter paths first (top-level pages before deep ones)
   return [...combined].sort((a, b) => {
     const aDepth = (a.match(/\//g) || []).length;
     const bDepth = (b.match(/\//g) || []).length;
     return aDepth - bDepth;
-  }).slice(0, 12);
+  });
 }
 
 function pageToContext(p: PageData, label: string): string {
