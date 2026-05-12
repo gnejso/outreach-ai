@@ -80,6 +80,51 @@ function htmlToText(html: string, limit: number): string {
     .slice(0, limit);
 }
 
+// Extract text embedded in __NEXT_DATA__, JSON-LD, and <script type="application/json"> blocks
+function extractEmbeddedJson(html: string): string {
+  const chunks: string[] = [];
+
+  // Next.js: __NEXT_DATA__ contains full page props as JSON
+  const nextData = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (nextData) chunks.push(nextData[1]);
+
+  // Nuxt/Vue: __NUXT__
+  const nuxtData = html.match(/__NUXT__\s*=\s*(\{[\s\S]*?\})\s*;?\s*<\/script>/i);
+  if (nuxtData) chunks.push(nuxtData[1]);
+
+  // JSON-LD (schema.org — often contains address, phone, etc.)
+  for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    chunks.push(m[1]);
+  }
+
+  // Any <script type="application/json">
+  for (const m of html.matchAll(/<script[^>]+type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    chunks.push(m[1]);
+  }
+
+  if (!chunks.length) return "";
+
+  // Flatten JSON values to plain text — extract all string values recursively
+  function flattenJson(raw: string): string {
+    try {
+      const obj = JSON.parse(raw);
+      const strings: string[] = [];
+      function walk(v: unknown) {
+        if (typeof v === "string" && v.length > 1) strings.push(v);
+        else if (Array.isArray(v)) v.forEach(walk);
+        else if (v && typeof v === "object") Object.values(v).forEach(walk);
+      }
+      walk(obj);
+      return strings.join("\n");
+    } catch {
+      // Not valid JSON — return raw (may contain inline data)
+      return raw.slice(0, 5000);
+    }
+  }
+
+  return chunks.map(flattenJson).join("\n\n");
+}
+
 async function fetchPage(url: string): Promise<PageData | null> {
   try {
     const res = await fetch(url, {
@@ -89,6 +134,13 @@ async function fetchPage(url: string): Promise<PageData | null> {
     if (!res.ok) return null;
     const html = await res.text();
     const { title, metaDesc } = extractMeta(html);
+
+    // For JS-rendered SPAs, most visible text is missing from raw HTML.
+    // Supplement with data embedded in __NEXT_DATA__, JSON-LD, and script tags.
+    const embeddedText = extractEmbeddedJson(html);
+    const visibleText = htmlToText(html, 20000);
+    const fullText = [visibleText, embeddedText].filter(Boolean).join("\n\n--- DANE Z JS ---\n\n");
+
     return {
       url,
       title,
@@ -97,7 +149,7 @@ async function fetchPage(url: string): Promise<PageData | null> {
       h2: extractHeadings(html, "h2"),
       phones: extractPhones(html),
       emails: extractEmails(html),
-      text: htmlToText(html, 20000),
+      text: fullText,
     };
   } catch {
     return null;
