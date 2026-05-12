@@ -104,7 +104,40 @@ async function fetchPage(url: string): Promise<PageData | null> {
   }
 }
 
-function extractSubpageLinks(html: string, baseUrl: string): string[] {
+// Common subpage slugs to always try, even on JS-rendered SPAs
+const COMMON_SLUGS = [
+  "kontakt", "contact",
+  "o-nas", "o-mnie", "about", "about-us",
+  "uslugi", "usługi", "services",
+  "oferta", "offer",
+  "cennik", "pricing", "ceny",
+  "portfolio", "realizacje", "projekty",
+  "zespol", "zespół", "team",
+];
+
+async function probeSubpages(baseUrl: string): Promise<string[]> {
+  const base = new URL(baseUrl);
+  const candidates = COMMON_SLUGS.map((s) => `${base.origin}/${s}`);
+  const results = await Promise.all(
+    candidates.map(async (url) => {
+      try {
+        const res = await fetch(url, {
+          method: "HEAD",
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; OutreachAI-Auditor/1.0)" },
+          signal: AbortSignal.timeout(5000),
+          redirect: "follow",
+        });
+        // Accept 200 only — 404 means page doesn't exist
+        return res.ok ? url : null;
+      } catch {
+        return null;
+      }
+    })
+  );
+  return results.filter((u): u is string => u !== null);
+}
+
+function extractLinksFromHtml(html: string, baseUrl: string): string[] {
   const base = new URL(baseUrl);
   const links = new Set<string>();
 
@@ -119,32 +152,39 @@ function extractSubpageLinks(html: string, baseUrl: string): string[] {
       } else if (href.startsWith("/") && href.length > 1) {
         full = base.origin + href;
       } else continue;
-
-      // Skip files, assets, lang variants with query
       if (/\.(pdf|jpg|jpeg|png|gif|svg|webp|css|js|xml|json|ico)$/i.test(full)) continue;
       if (full === baseUrl || full === base.origin + "/") continue;
       links.add(full.replace(/\/$/, ""));
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
+  return [...links];
+}
+
+async function getSubpageUrls(html: string, baseUrl: string): Promise<string[]> {
+  // Try both: links found in HTML + probing common slugs in parallel
+  const [fromHtml, fromProbe] = await Promise.all([
+    Promise.resolve(extractLinksFromHtml(html, baseUrl)),
+    probeSubpages(baseUrl),
+  ]);
+
+  const combined = new Set([...fromHtml, ...fromProbe]);
 
   const priority = [
     "kontakt", "contact",
-    "o-nas", "o-mnie", "about", "about-us",
-    "uslugi", "usługi", "services", "oferta", "offer",
+    "o-nas", "o-mnie", "about",
+    "uslugi", "usługi", "services", "oferta",
     "cennik", "pricing", "ceny",
-    "portfolio", "realizacje", "projects",
+    "portfolio", "realizacje",
     "zespol", "team",
   ];
 
-  return [...links].sort((a, b) => {
+  return [...combined].sort((a, b) => {
     const aLow = a.toLowerCase();
     const bLow = b.toLowerCase();
     const aScore = priority.findIndex((p) => aLow.includes(p));
     const bScore = priority.findIndex((p) => bLow.includes(p));
     return (aScore === -1 ? 99 : aScore) - (bScore === -1 ? 99 : bScore);
-  }).slice(0, 7);
+  }).slice(0, 8);
 }
 
 function pageToContext(p: PageData, label: string): string {
@@ -190,8 +230,8 @@ export async function POST(req: NextRequest) {
     if (res.ok) homepageHtml = await res.text();
   } catch { /* proceed without */ }
 
-  // 2. Extract and fetch subpages in parallel
-  const subpageUrls = homepageHtml ? extractSubpageLinks(homepageHtml, cleanUrl) : [];
+  // 2. Find subpages: links in HTML + probe common slugs (handles SPAs)
+  const subpageUrls = await getSubpageUrls(homepageHtml, cleanUrl);
   const subpageResults = await Promise.all(subpageUrls.map((u) => fetchPage(u)));
   const subpages = subpageResults.filter((p): p is PageData => p !== null);
 
