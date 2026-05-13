@@ -4,6 +4,7 @@ export type ActivityType =
   | "COLD_CALL_SCRIPT"
   | "SMS_CONTENT"
   | "SMS_SEND"
+  | "EMAIL_CONTENT"
   | "CREDITS_PURCHASE"
   | "SUBSCRIPTION_RENEWAL"
   | "STATUS_CHANGE"
@@ -76,6 +77,7 @@ export interface CreditCost {
   COLD_CALL_SCRIPT: 4;
   SMS_CONTENT: 3;
   SMS_SEND: 10;
+  EMAIL_CONTENT: 4;
   SCRAPER_COMPANY: 2;
   OFERTA_UMOWA: 25;
 }
@@ -84,6 +86,7 @@ export const CREDIT_COSTS: CreditCost = {
   COLD_CALL_SCRIPT: 4,
   SMS_CONTENT: 3,
   SMS_SEND: 10,
+  EMAIL_CONTENT: 4,
   SCRAPER_COMPANY: 2,
   OFERTA_UMOWA: 25,
 };
