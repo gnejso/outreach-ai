@@ -9,6 +9,7 @@ import { handleUnauthorized } from "@/lib/auth-redirect";
 import type { CompanyRow, ColumnMapping } from "@/types";
 import { CREDIT_COSTS } from "@/types";
 import { mapColumns } from "@/lib/spreadsheet";
+import { ColdCallInfoSection } from "./ColdCallInfoSection";
 
 interface CrmDraft {
   status: string;
@@ -75,7 +76,7 @@ export function ColdCallClient({ userEmail }: Props) {
 
   const onDrop = useCallback(async (files: File[]) => {
     if (isGuest) {
-      window.location.href = "/pl/login";
+      router.push("/login");
       return;
     }
     const file = files[0];
@@ -293,6 +294,8 @@ export function ColdCallClient({ userEmail }: Props) {
             {t("fileRequirements")}
           </p>
         </div>
+
+        <ColdCallInfoSection />
       </div>
     );
   }

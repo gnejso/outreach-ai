@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized } from "@/lib/auth-redirect";
 import { CREDIT_COSTS } from "@/types";
+import { ColdEmailInfoSection } from "./ColdEmailInfoSection";
 
 interface CrmDraft {
   status: string;
@@ -94,7 +95,7 @@ export function ColdEmailClient({ userEmail }: Props) {
 
   const onDrop = useCallback(async (files: File[]) => {
     if (isGuest) {
-      window.location.href = "/pl/login";
+      router.push("/login");
       return;
     }
     const file = files[0];
@@ -306,6 +307,8 @@ export function ColdEmailClient({ userEmail }: Props) {
             {isGuest ? "🔐 Zaloguj się aby wgrać plik" : "Przeciągnij lub kliknij aby wybrać plik .xlsx, .xls, .csv"}
           </p>
         </div>
+
+        <ColdEmailInfoSection />
       </div>
     );
   }

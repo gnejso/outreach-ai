@@ -8,6 +8,7 @@ import { handleUnauthorized } from "@/lib/auth-redirect";
 import type { CompanyRow, ColumnMapping } from "@/types";
 import { CREDIT_COSTS } from "@/types";
 import { mapColumns } from "@/lib/spreadsheet";
+import { SmsInfoSection } from "./SmsInfoSection";
 
 interface Props {
   userEmail?: string | null;
@@ -40,7 +41,7 @@ export function SmsClient({ userEmail }: Props) {
 
   const onDrop = useCallback(async (files: File[]) => {
     if (isGuest) {
-      window.location.href = "/pl/login";
+      router.push("/login");
       return;
     }
     const file = files[0];
@@ -209,6 +210,8 @@ export function SmsClient({ userEmail }: Props) {
             {isGuest ? "🔐 Zaloguj się aby wgrać plik" : tc("uploadDesc")}
           </p>
         </div>
+
+        <SmsInfoSection />
       </div>
     );
   }
