@@ -48,6 +48,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
     { href: "/dashboard", label: t("dashboard"), icon: <DashIcon /> },
     { href: "/cold-call", label: t("coldCall"), icon: <CallIcon /> },
     { href: "/sms", label: t("sms"), icon: <SmsIcon /> },
+    { href: "/cold-email", label: "Cold Email", icon: <EmailIcon /> },
     { href: "/scraper", label: t("findCompanies"), icon: <ScraperIcon /> },
     { href: "/reminders", label: t("followUps"), icon: <BellIcon />, badge: true },
     { href: "/jaskinia", label: t("jaskinia"), icon: <LionIcon /> },
@@ -86,9 +87,9 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
     >
       {/* Logo */}
       <div suppressHydrationWarning style={{ padding: "0 20px 24px", borderBottom: "1px solid var(--border)" }}>
-        <Link href="/dashboard" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+        <Link href="/dashboard" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
           <div suppressHydrationWarning style={{ width: 8, height: 8, borderRadius: "50%", background: "#2A7FFF", boxShadow: "0 0 8px #2A7FFF", flexShrink: 0 }} />
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.5px", textShadow: "0 0 20px rgba(42,127,255,0.5)" }}>
+          <span className="sidebar-logo-text" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.5px", textShadow: "0 0 20px rgba(42,127,255,0.5)" }}>
             OutreachAI
           </span>
         </Link>
@@ -96,7 +97,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
 
       {/* User Info */}
       <div suppressHydrationWarning style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--border)" }}>
-        <div suppressHydrationWarning style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <div suppressHydrationWarning style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, justifyContent: "center" }}>
           <div
             suppressHydrationWarning
             style={{
@@ -121,7 +122,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
               </span>
             )}
           </div>
-          <div suppressHydrationWarning style={{ overflow: "hidden" }}>
+          <div className="user-info-text" suppressHydrationWarning style={{ overflow: "hidden" }}>
             <div suppressHydrationWarning style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ color: "var(--text-primary)", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 110 }}>
                 {user.name ?? user.email?.split("@")[0] ?? "User"}
@@ -150,15 +151,17 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
         {/* Credits */}
         <div
           suppressHydrationWarning
+          className="credits-box"
           style={{
             background: "rgba(42,127,255,0.06)",
             border: "1px solid rgba(42,127,255,0.2)",
             borderRadius: 8,
             padding: "8px 12px",
+            textAlign: "center",
           }}
         >
           <div suppressHydrationWarning style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-            <div suppressHydrationWarning style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 600, letterSpacing: "0.06em" }}>
+            <div className="sidebar-text" suppressHydrationWarning style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 600, letterSpacing: "0.06em" }}>
               💎 {tc("label")}
             </div>
             <div
@@ -202,6 +205,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href as Parameters<typeof Link>[0]["href"]}
+              className="nav-item"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -215,6 +219,7 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
                 transition: "all 0.15s",
                 fontSize: 14,
                 fontWeight: isActive ? 500 : 400,
+                position: "relative",
               }}
               onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.04)"; }}
               onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
@@ -222,9 +227,10 @@ export function Sidebar({ user, locale, overdueReminders = 0 }: SidebarProps) {
               <span style={{ color: isActive ? "var(--accent-bright)" : "var(--text-muted)", flexShrink: 0 }}>
                 {item.icon}
               </span>
-              <span style={{ flex: 1 }}>{item.label}</span>
+              <span className="sidebar-text" style={{ flex: 1 }}>{item.label}</span>
               {item.badge && overdueReminders > 0 && (
                 <span
+                  className="sidebar-text"
                   style={{
                     background: "var(--danger, #c93b3b)",
                     color: "white",
@@ -447,6 +453,15 @@ function DocumentIcon() {
       <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <polyline points="10 9 9 9 8 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function EmailIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="22,6 12,13 2,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

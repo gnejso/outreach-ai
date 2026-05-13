@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/dashboard/Sidebar";
+import { ResponsiveLayout } from "@/components/dashboard/ResponsiveLayout";
 import { GuestBanner } from "@/components/dashboard/GuestBanner";
 
 export default async function DashboardLayout({
@@ -55,7 +55,7 @@ export default async function DashboardLayout({
 
   return (
     <div suppressHydrationWarning className="page-bg" style={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar
+      <ResponsiveLayout
         user={{
           name: user.name,
           email: user.email,
@@ -66,21 +66,10 @@ export default async function DashboardLayout({
         }}
         locale={locale}
         overdueReminders={overdueReminders}
-      />
-      <main
-        suppressHydrationWarning
-        style={{
-          marginLeft: 240,
-          flex: 1,
-          padding: "32px 40px",
-          position: "relative",
-          zIndex: 1,
-          minHeight: "100vh",
-        }}
       >
         {!session?.user && <GuestBanner />}
         {children}
-      </main>
+      </ResponsiveLayout>
     </div>
   );
 }

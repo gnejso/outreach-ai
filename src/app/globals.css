@@ -173,6 +173,33 @@ textarea::placeholder {
   color: var(--text-muted);
 }
 
+/* Mobile responsive touch targets */
+@media (max-width: 767px) {
+  .btn-primary, .btn-secondary, button {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  input, textarea, select {
+    min-height: 44px;
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .card {
+    padding: 16px !important;
+  }
+
+  h1 {
+    font-size: 24px !important;
+  }
+
+  h2 {
+    font-size: 20px !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
